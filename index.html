@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HARCASSAVA">
+<title>HARCASSAVA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F8F2; --paper:#FFFFFF; --ink:#17311F; --ink2:#4A6152; --line:#D5DFD3;
+    --leaf:#2E7D4F; --leaf-ink:#FFFFFF; --leaf-soft:#E3F0E6;
+    --stem:#9C4A2F; --stem-soft:#F6E6E0;
+    --tag:#F4EBB8; --tag-ink:#3B3410; --tag-edge:#D9CB80;
+    --focus:#2E7D4F; --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#131C16; --paper:#1C2820; --ink:#E7EFE6; --ink2:#A7B8AB; --line:#2F3F34;
+      --leaf:#5FB27F; --leaf-ink:#0F1F15; --leaf-soft:#22382B;
+      --stem:#D98A6C; --stem-soft:#3D2A22;
+      --tag:#E8DD9C; --tag-ink:#2A2506; --tag-edge:#B8AA5F; --focus:#7ED09B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#131C16; --paper:#1C2820; --ink:#E7EFE6; --ink2:#A7B8AB; --line:#2F3F34;
+    --leaf:#5FB27F; --leaf-ink:#0F1F15; --leaf-soft:#22382B;
+    --stem:#D98A6C; --stem-soft:#3D2A22;
+    --tag:#E8DD9C; --tag-ink:#2A2506; --tag-edge:#B8AA5F; --focus:#7ED09B;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px; line-height:1.45;
+    padding-bottom:calc(76px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
+  }
+  [hidden]{display:none!important}
+  header{position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line)}
+  .hrow{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 16px 8px}
+  .hrow > div{min-width:0}
+  header h1{font-size:19px; font-weight:400; margin:0; letter-spacing:.07em}
+  header h1 b{font-weight:800}
+  .status{font-size:12px; color:var(--ink2); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:58vw}
+  .status[data-kind="offline"],.status[data-kind="badkey"],.status[data-kind="error"]{color:var(--stem)}
+  .userchip{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:999px;
+    padding:6px 14px; font:inherit; font-size:14px; font-weight:600; min-height:36px; cursor:pointer;
+    max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .trialbar{display:flex; align-items:center; gap:10px; width:100%; border:none; border-top:1px solid var(--line);
+    background:var(--leaf-soft); color:var(--ink); font:inherit; text-align:left; padding:8px 16px; cursor:pointer; min-height:44px}
+  .trialbar .tn{font-weight:800; font-size:15px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .trialbar .tp{font-size:13px; color:var(--ink2); white-space:nowrap; font-variant-numeric:tabular-nums}
+  .trialbar .caret{color:var(--ink2); font-size:12px}
+
+  main{padding:14px 16px 8px; max-width:640px; margin:0 auto}
+  h2{font-size:20px; font-weight:800; margin:6px 0 12px; letter-spacing:-0.01em; text-wrap:balance}
+  h3{font-size:15px; font-weight:600; margin:18px 0 8px; color:var(--ink2)}
+  p{margin:0 0 10px}
+  .muted{color:var(--ink2); font-size:14px}
+  .small{font-size:13px}
+
+  .f{display:block; margin-bottom:14px}
+  .f > span{display:block; font-size:14px; font-weight:600; margin-bottom:5px}
+  .f > small{display:block; color:var(--ink2); font-size:12.5px; margin-top:4px}
+  input,select,textarea{
+    width:100%; font:inherit; font-size:17px; color:var(--ink); background:var(--paper);
+    border:1px solid var(--line); border-radius:var(--radius); padding:12px; min-height:50px;
+    -webkit-appearance:none; appearance:none;
+  }
+  textarea{min-height:96px; resize:vertical; font-size:15px}
+  input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+  .row{display:flex; gap:10px; align-items:flex-end}
+  .hintin{font-style:normal; font-weight:400; color:var(--ink2); font-size:12.5px}
+  .row > *{flex:1; min-width:0}
+  .num{text-align:right; font-variant-numeric:tabular-nums}
+  input.big{font-size:26px; font-weight:800; min-height:60px}
+
+  button{font:inherit; cursor:pointer}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:var(--radius);
+    padding:12px 16px; min-height:48px; font-size:16px; font-weight:600; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); width:100%; text-align:center}
+  .btn.primary{background:var(--leaf); color:var(--leaf-ink); border-color:var(--leaf)}
+  .btn.danger{color:var(--stem); border-color:var(--stem-soft); background:var(--stem-soft)}
+  .btn.ghost{background:transparent}
+  .btn.sm{min-height:40px; padding:8px 12px; font-size:14px}
+  .btn:disabled{opacity:.5; cursor:default}
+  .btnrow{display:flex; gap:10px; margin-top:12px}
+  .btnrow .btn{flex:1}
+  .linkbtn{border:none; background:none; color:var(--stem); font-size:13px; padding:8px 0; text-decoration:underline}
+
+  /* tìm ô */
+  .finder{display:grid; grid-template-columns:52px 1fr 52px; gap:8px; align-items:end; margin-bottom:14px}
+  .finder label{display:block}
+  .finder label span{display:block; font-size:13px; font-weight:600; color:var(--ink2); margin-bottom:4px; text-align:center}
+  .finder input{font-size:28px; font-weight:800; text-align:center; min-height:62px; font-variant-numeric:tabular-nums}
+  .finder input::placeholder{font-size:16px; font-weight:400}
+  .stepbtn{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:var(--radius);
+    min-height:62px; font-size:26px; line-height:1}
+
+  /* thẻ cọc ô: phần nổi bật duy nhất */
+  .stake{display:flex; align-items:center; gap:14px; background:var(--tag); color:var(--tag-ink);
+    border:2px solid var(--tag-edge); border-radius:12px; padding:10px 14px; margin-bottom:12px; box-shadow:0 2px 0 var(--tag-edge)}
+  .stake .no{font-size:40px; font-weight:800; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums}
+  .stake .meta{display:flex; flex-direction:column; gap:1px; min-width:0; font-size:13px}
+  .stake .meta b{font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .stake .meta span{opacity:.8}
+
+  .banner{background:var(--stem-soft); color:var(--ink); border:1px solid var(--stem); border-radius:var(--radius);
+    padding:9px 12px; font-size:14px; margin-bottom:12px}
+  .banner b{color:var(--stem)}
+  .done{background:var(--leaf-soft); border:1px solid var(--leaf); border-radius:var(--radius); padding:12px 14px; margin-bottom:14px}
+  .done .t{font-weight:800; font-size:16px}
+  .done .s{font-size:14px; color:var(--ink2); margin-top:2px}
+
+  .stepper{display:grid; grid-template-columns:56px 1fr 56px; gap:8px}
+  .stepper button{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:var(--radius); font-size:24px; min-height:50px}
+  .stepper input{text-align:center; font-weight:800; font-size:20px}
+
+  .result{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:4px 14px; margin-bottom:14px}
+  .result .l{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:15px}
+  .result .l:first-child{border-top:none}
+  .result .l b{font-size:20px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .result .l.main b{font-size:26px; color:var(--leaf)}
+  .result .e{padding:10px 0; font-size:14px; color:var(--ink2)}
+  .result .e.bad{color:var(--stem); font-weight:600}
+
+  .chips{display:flex; gap:8px; margin:0 0 12px; flex-wrap:wrap}
+  .chip{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:999px;
+    padding:8px 14px; font-size:14px; font-weight:600; min-height:40px}
+  .chip.on{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+
+  .recent{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--paper)}
+  .recent button{display:grid; grid-template-columns:64px 1fr auto; gap:10px; align-items:baseline; width:100%; text-align:left;
+    border:none; border-top:1px solid var(--line); background:transparent; color:var(--ink); padding:10px 12px; font-size:14px}
+  .recent button:first-child{border-top:none}
+  .recent .p{font-weight:800; font-size:16px; font-variant-numeric:tabular-nums}
+  .recent .w{color:var(--ink2); font-size:12.5px; white-space:nowrap}
+
+  .empty{padding:24px 16px; text-align:center; color:var(--ink2); border:1px dashed var(--line); border-radius:var(--radius)}
+  .empty b{color:var(--ink)}
+
+  /* tổng hợp */
+  .prog{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px}
+  .prog div{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:10px 10px 8px}
+  .prog b{display:block; font-size:22px; font-variant-numeric:tabular-nums; line-height:1.15}
+  .prog i{font-style:normal; font-size:13px; color:var(--ink2); font-weight:400}
+  .prog span{display:block; font-size:12.5px; color:var(--ink2)}
+  .tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper)}
+  table{width:100%; border-collapse:collapse; font-size:15px; table-layout:fixed}
+  th:nth-child(3){width:76px} th:nth-child(4){width:62px} th:nth-child(5){width:70px}
+  td:nth-child(2){overflow:hidden; text-overflow:ellipsis}
+  th,td{padding:9px 6px; text-align:right; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; white-space:nowrap}
+  th{font-weight:600; color:var(--ink2); border-top:none; font-size:12px; line-height:1.25; vertical-align:bottom}
+  th:nth-child(2),td:nth-child(2){text-align:left}
+  td:first-child,th:first-child{color:var(--ink2); width:32px; padding-left:10px}
+  td:last-child,th:last-child{padding-right:10px}
+  td .ln{display:block; font-size:12.5px; color:var(--ink2); font-weight:400; overflow:hidden; text-overflow:ellipsis}
+  td.k{font-weight:800; color:var(--leaf)}
+  th.k{color:var(--ink)}
+  tr[data-goto]{cursor:pointer}
+  .est{display:inline-block; font-size:10.5px; font-weight:800; background:var(--tag); color:var(--tag-ink);
+    border:1px solid var(--tag-edge); border-radius:4px; padding:0 4px; margin-left:4px; vertical-align:1px}
+  .kv{width:100%; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); overflow:hidden}
+  .kv div{display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-top:1px solid var(--line); font-size:15px}
+  .kv div:first-child{border-top:none}
+  .kv span{color:var(--ink2)}
+  .plist{display:flex; flex-wrap:wrap; gap:6px}
+  .plist button{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:8px; padding:6px 10px; font-size:15px; font-weight:600; min-width:48px; font-variant-numeric:tabular-nums}
+
+  nav{position:fixed; left:0; right:0; bottom:0; z-index:5; display:grid; grid-template-columns:repeat(4,1fr);
+    background:var(--paper); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom)}
+  nav button{border:none; background:transparent; color:var(--ink2); padding:10px 4px 8px; font-size:12px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:3px; min-height:60px}
+  nav button svg{width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  nav button.on{color:var(--leaf)}
+
+  .savebar{position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom)); z-index:6;
+    display:flex; justify-content:center; pointer-events:none; padding:12px 16px;
+    background:linear-gradient(to top,var(--bg) 62%,rgba(127,127,127,0))}
+  .savebar .btn{max-width:608px; min-height:56px; font-size:18px; font-weight:800; pointer-events:auto; box-shadow:0 3px 12px rgba(23,49,31,.18)}
+  .savepad{height:90px}
+
+  .modal{position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; justify-content:center}
+  .modal .box{background:var(--bg); width:100%; max-width:640px; border-radius:16px 16px 0 0;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom)); max-height:92vh; overflow:auto}
+  .modal h2{margin-top:0}
+  .tlist{display:flex; flex-direction:column; gap:8px; margin-bottom:14px}
+  .tlist button{display:block; text-align:left; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    border-radius:var(--radius); padding:11px 14px; width:100%}
+  .tlist button.on{border-color:var(--leaf); box-shadow:inset 0 0 0 1px var(--leaf)}
+  .tlist b{display:block; font-size:16px}
+  .tlist span{font-size:13px; color:var(--ink2)}
+  .toast{position:fixed; left:50%; bottom:calc(140px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+    background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px; font-size:14px; font-weight:600;
+    z-index:30; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; text-align:center}
+  .toast.show{opacity:1}
+  .csvbox{width:100%; min-height:160px; font-family:ui-monospace,Menlo,monospace; font-size:12px}
+  @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div>
+      <h1>HAR<b>C</b>ASSAVA</h1>
+      <div class="status" id="status">—</div>
+    </div>
+    <button class="userchip" id="userchip" type="button" aria-label="Đổi người thu thập">—</button>
+  </div>
+  <button class="trialbar" id="trialbar" type="button" hidden>
+    <span class="tn" id="tb-name"></span><span class="tp" id="tb-prog"></span><span class="caret">▾</span>
+  </button>
+</header>
+
+<main id="main"></main>
+
+<nav id="nav">
+  <button data-tab="y" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 4v3M5 9h14M7 9l-3 7a3.5 3.5 0 0 0 6 0L7 9zM17 9l-3 7a3.5 3.5 0 0 0 6 0l-3-7zM9 20h6M12 7v13"/></svg>Năng suất
+  </button>
+  <button data-tab="s" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 3c3.5 4.2 6 7.4 6 10.6A6 6 0 0 1 6 13.6C6 10.4 8.5 7.2 12 3zM9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>Tinh bột
+  </button>
+  <button data-tab="sum" type="button">
+    <svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Tổng hợp
+  </button>
+  <button data-tab="set" type="button">
+    <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M16 4.5v5M8 14.5v5"/></svg>Cài đặt
+  </button>
+</nav>
+
+<div id="modal"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= hằng số, trạng thái ================= */
+const APP_VERSION = '1.0';
+const KEY = 'harcassava_v1';
+/* Tinh bột (%) = a × tỷ trọng + b */
+const FORMULAS = [
+  { id:'reimann', name:'Reimann (Thái Lan)', a: 1/0.004845, b: -1.00906/0.004845 },
+  { id:'ciat',    name:'CIAT (Kawano)',      a: 158.3,      b: -146.65 },
+  { id:'custom',  name:'Hệ số riêng' }
+];
+const newY = () => ({ plot:'', plants:'', weight:'', sample:'', note:'', touched:{}, dirty:false });
+const newS = () => ({ plot:'', smode:'direct', starch:'', air:'', water:'', formula:'', sample:'', touched:{}, dirty:false, pinned:false });
+const emptyMeta = () => ({ settings:{ url:'', key:'' }, user:'', trials:{}, cur:null, queue:[], failed:[], lastSync:0,
+  draft:{ y:newY(), s:newS() }, ui:{ rank:'starch', by:'plot', formula:'reimann', smode:'direct', last:{} }, journal:[] });
+
+let M = loadMeta();
+const P = {};                 // số liệu ô, nạp theo từng thí nghiệm
+const OC = {};                // thứ tự ô đã tính sẵn
+let tab = 'y', syncing = false, syncAgain = false, syncState = { kind:'idle', msg:'' }, syncTimer = null;
+let renderPending = false, rankLimit = 100, metaTimer = null, modalKind = '';
+
+function loadMeta(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return emptyMeta();
+    const m = Object.assign(emptyMeta(), JSON.parse(raw));
+    m.draft = { y:Object.assign(newY(), m.draft && m.draft.y), s:Object.assign(newS(), m.draft && m.draft.s) };
+    m.ui = Object.assign(emptyMeta().ui, m.ui); m.ui.last = m.ui.last || {};
+    return m;
+  }catch(e){ return emptyMeta(); }
+}
+function saveMeta(){
+  clearTimeout(metaTimer); metaTimer = null;
+  try{ localStorage.setItem(KEY, JSON.stringify(M)); }catch(e){ toast('Bộ nhớ máy đầy — hãy xuất file sao lưu'); }
+}
+function saveMetaSoon(){ if(!metaTimer) metaTimer = setTimeout(saveMeta, 250); }
+function plotsOf(tid){
+  if(!P[tid]){ try{ P[tid] = JSON.parse(localStorage.getItem(KEY + '_p_' + tid) || '{}'); }catch(e){ P[tid] = {}; } }
+  return P[tid];
+}
+function savePlots(tid){
+  try{ localStorage.setItem(KEY + '_p_' + tid, JSON.stringify(P[tid] || {})); }catch(e){ toast('Bộ nhớ máy đầy — hãy xuất file sao lưu'); }
+}
+
+/* ================= tiện ích ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const has = v => v !== undefined && v !== null && v !== '';
+const fv = (f,n) => f.querySelector('[name="' + n + '"]');
+const snap = o => JSON.parse(JSON.stringify(o));
+/* so sánh hai bản ghi không phụ thuộc thứ tự trường */
+const canon = o => o ? JSON.stringify(Object.keys(o).sort().map(k => [k, String(o[k])])) : 'null';
+const pad2 = n => String(n).padStart(2,'0');
+const fmtT = ms => { const d = new Date(ms); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const fmtDT = ms => { if(!has(ms)) return ''; const d = new Date(Number(ms)); return `${d.getDate()}/${d.getMonth()+1} ${fmtT(d)}`; };
+const isoLocal = ms => { if(!has(ms)) return ''; const d = new Date(Number(ms)); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${fmtT(d)}`; };
+const todayISO = () => isoLocal(Date.now()).slice(0,10);
+/* số hiển thị kiểu Việt Nam: dấu phẩy thập phân */
+function nf(v, d = 1){
+  if(v === null || v === undefined || v === '' || isNaN(v)) return '—';
+  let s = Number(v).toFixed(d);
+  if(s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+  const neg = s[0] === '-'; if(neg) s = s.slice(1);
+  const [a, b] = s.split('.');
+  return (neg && Number(s) !== 0 ? '-' : '') + a.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (b ? ',' + b : '');
+}
+const dec = v => String(v).replace('.', ',');
+/* đọc số người dùng gõ: chấp nhận cả dấu phẩy lẫn dấu chấm */
+function num(v){
+  if(v === null || v === undefined) return null;
+  const s = String(v).trim().replace(/\s/g,'').replace('\u2212', '-').replace(',', '.');
+  if(!/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+  const n = parseFloat(s); return isNaN(n) ? null : n;
+}
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+const newId = () => 't' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+
+/* ================= thí nghiệm, ô ================= */
+function T(){ const t = M.cur && M.trials[M.cur]; return t && !t.deleted ? t : null; }
+const liveTrials = () => Object.values(M.trials).filter(t => !t.deleted).sort((a,b) => (b.created||0) - (a.created||0));
+function normTrial(t){
+  return Object.assign({}, t, { id:String(t.id), name:String(t.name ?? ''), location:String(t.location ?? ''),
+    nplots:Number(t.nplots)||0, nreps:Number(t.nreps)||0, nharvest:Number(t.nharvest)||0, deleted:t.deleted ? 1 : 0 });
+}
+/* Thứ tự các ô: theo sơ đồ đã dán nếu có, nếu không thì 1..số ô */
+function ord(t){
+  const c = OC[t.id];
+  if(c && c.n === t.nplots) return c;
+  const ps = plotsOf(t.id);
+  const lay = Object.keys(ps).filter(k => has(ps[k].ord));
+  let ids, layout = false;
+  if(lay.length){ ids = lay.sort((a,b) => ps[a].ord - ps[b].ord); layout = true; }
+  else { ids = []; for(let i = 1; i <= t.nplots; i++) ids.push(String(i)); }
+  const pos = {}; ids.forEach((id,i) => pos[id] = i);
+  return OC[t.id] = { ids, pos, layout, n:t.nplots, text: ids.some(id => !/^\d+$/.test(id)), lines: layout && ids.some(id => ps[id].line) };
+}
+const bust = tid => { delete OC[tid]; };
+function normPlot(t, v){
+  v = String(v ?? '').trim(); if(!v) return null;
+  const o = ord(t);
+  if(o.pos[v] !== undefined) return v;
+  if(/^\d+$/.test(v)){ const n = String(parseInt(v,10)); if(o.pos[n] !== undefined) return n; }
+  return null;
+}
+function repOf(t, id){
+  const r = plotsOf(t.id)[id];
+  if(r && has(r.rep)) return String(r.rep);
+  const o = ord(t);
+  if(!o.layout && t.nreps > 0 && t.nplots % t.nreps === 0 && /^\d+$/.test(id)) return String(Math.ceil(Number(id) / (t.nplots / t.nreps)));
+  return '';
+}
+const totalW = r => r && has(r.weight) ? Number(r.weight) + (Number(r.sample) || 0) : null;
+function adjW(t, r){
+  const tw = totalW(r); if(tw === null) return null;
+  const p = has(r.plants) ? Number(r.plants) : t.nharvest;
+  if(!p || !t.nharvest) return null;
+  return tw * t.nharvest / p;
+}
+const starchOf = r => r && has(r.starch) ? Number(r.starch) : null;
+function coef(t, fid){
+  if(fid === 'custom'){ const a = Number(t.fa), b = Number(t.fb); return has(t.fa) && has(t.fb) && !isNaN(a) && !isNaN(b) ? { a, b } : null; }
+  const f = FORMULAS.find(x => x.id === fid) || FORMULAS[0]; return { a:f.a, b:f.b };
+}
+function applyFields(rec, fields){
+  const r = Object.assign({}, rec, fields);
+  for(const k in fields) if(fields[k] === '' || fields[k] === null) delete r[k];
+  return r;
+}
+function applyLayoutLocal(tid, rows){
+  const ps = plotsOf(tid), seen = {};
+  rows.forEach((r,i) => { const id = String(r[0]); seen[id] = 1; ps[id] = applyFields(ps[id], { ord:i, rep:r[1], line:r[2] }); });
+  for(const id in ps) if(!seen[id]) delete ps[id].ord;
+  bust(tid);
+}
+function parseLayout(text){
+  const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean), rows = [], seen = {};
+  for(let i = 0; i < lines.length; i++){
+    const c = (lines[i].includes('\t') ? lines[i].split('\t') : lines[i].split(/[;,]/)).map(s => s.trim());
+    if(i === 0 && !/\d/.test(c[0])) continue;                 // dòng tiêu đề
+    let plot = c[0], rep = '', line = '';
+    if(c.length >= 3){ rep = c[1]; line = c.slice(2).filter(Boolean).join(' '); } else if(c.length === 2){ line = c[1]; }
+    if(!plot) continue;
+    if(/^\d+$/.test(plot)) plot = String(parseInt(plot,10));
+    if(seen[plot]) return { error:`Ô ${plot} bị lặp lại ở dòng ${i+1}` };
+    seen[plot] = 1; rows.push([plot, rep, line]);
+  }
+  return { rows };
+}
+
+/* ================= đồng bộ ================= */
+function enqueue(op){ M.queue.push(snap(op)); saveMeta(); scheduleSync(300); renderStatus(); }
+function scheduleSync(ms){ clearTimeout(syncTimer); syncTimer = setTimeout(() => sync('change'), ms); }
+async function api(body){
+  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
+  try{
+    const r = await fetch(M.settings.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body:JSON.stringify(body), redirect:'follow', signal:ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+async function sync(reason){
+  if(!M.settings.url){ setStatus('local'); return; }
+  if(syncing){ syncAgain = true; return; }
+  if(navigator.onLine === false){ setStatus('offline'); return; }
+  syncing = true; setStatus('syncing');
+  try{
+    const ops = M.queue.slice(0, 40);
+    const res = await api({ key:M.settings.key, action: ops.length ? 'ops' : 'pull', ops, since:M.lastSync, user:M.user });
+    if(!res || !res.ok){ setStatus(res && res.error === 'wrong_key' ? 'badkey' : 'error', res && res.error); return; }
+    // Bỏ khỏi hàng đợi đúng những thao tác vừa gửi (so theo chính đối tượng, không theo số lượng).
+    ops.forEach((op, i) => {
+      const k = M.queue.indexOf(op); if(k < 0) return;
+      const r = (res.results || [])[i];
+      if(r && r.ok === false){
+        op.tries = (op.tries || 0) + 1; op.err = r.error;
+        if(op.tries >= 3){ M.queue.splice(k, 1); M.failed.push(op); }
+      } else M.queue.splice(k, 1);
+    });
+    const changed = applyPull(res);
+    M.lastSync = Math.max(0, (res.now || Date.now()) - 15000);
+    saveMeta(); setStatus('ok');
+    if(changed){
+      if(modalKind === 'trials') openTrialsModal();
+      safeRender();
+      if(M.user && !T() && liveTrials().length && !$('.modal') && !isTyping()) openTrialsModal();
+    } else renderHeader();
+    if(M.queue.length && M.queue.some(q => !q.tries)) syncAgain = true;
+  }catch(e){ setStatus('offline'); }
+  finally{
+    syncing = false;
+    if(syncAgain){ syncAgain = false; setTimeout(() => sync('again'), 50); }
+  }
+}
+function applyOpLocal(q){
+  if(q.op === 'trial') M.trials[q.trial.id] = normTrial(Object.assign({}, M.trials[q.trial.id], q.trial));
+  else if(q.op === 'layout') applyLayoutLocal(q.trial, q.rows);
+  else if(q.op === 'plot'){ const ps = plotsOf(q.trial); ps[q.plot] = applyFields(ps[q.plot], q.fields); }
+}
+function applyPull(res){
+  const trials = res.trials || [], plots = res.plots || [];
+  if(!trials.length && !plots.length) return false;
+  const touched = new Set(), wasT = new Map(), wasP = [];
+  for(const st of trials){ wasT.set(st.id, canon(M.trials[st.id])); M.trials[st.id] = normTrial(st); bust(st.id); }
+  for(const sp of plots){
+    const r = Object.assign({}, sp); delete r.t; delete r.p;
+    const ps = plotsOf(sp.t);
+    wasP.push([sp.t, sp.p, canon(ps[sp.p])]);
+    ps[sp.p] = r; touched.add(sp.t);
+  }
+  // Bản từ sổ chung là gốc; những gì máy này còn chờ gửi được áp lại lên trên, nên không mất số vừa nhập.
+  for(const q of M.queue.concat(M.failed)){ applyOpLocal(q); if(q.op !== 'trial') touched.add(q.trial); }
+  touched.forEach(id => { bust(id); savePlots(id); });
+  if(M.cur && (!M.trials[M.cur] || M.trials[M.cur].deleted)) M.cur = null;
+  // Chỉ báo "có thay đổi" khi dữ liệu thật sự khác với thứ máy đang có (tránh vẽ lại màn hình vô ích).
+  for(const [id, was] of wasT) if(canon(M.trials[id]) !== was) return true;
+  for(const [t, p, was] of wasP) if(canon(plotsOf(t)[p]) !== was) return true;
+  return false;
+}
+function setStatus(kind, msg){ syncState = { kind, msg }; renderStatus(); }
+function renderStatus(){
+  const el = $('#status'); if(!el) return;
+  const q = M.queue.length, pend = q ? ` · ${q} chờ gửi` : '', bad = M.failed.length ? ` · ${M.failed.length} lỗi gửi` : '';
+  const local = 'Chưa nối sổ chung — lưu trên máy' + pend;
+  const map = {
+    local, idle: M.settings.url ? 'Chưa đồng bộ' + pend : local,
+    syncing: 'Đang đồng bộ…' + pend,
+    ok: `Đã đồng bộ ${fmtT(Date.now())}` + pend + bad,
+    offline: 'Mất mạng — sẽ gửi khi có lại' + pend,
+    badkey: 'Sai mã nhóm — xem tab Cài đặt',
+    error: 'Lỗi máy chủ: ' + (syncState.msg || '')
+  };
+  el.textContent = map[syncState.kind] || '';
+  el.dataset.kind = syncState.kind;
+}
+
+/* ================= vẽ màn hình ================= */
+function isTyping(){ const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
+function safeRender(){ if(isTyping() || $('.modal')){ renderPending = true; renderHeader(); return; } renderPending = false; render(); }
+document.addEventListener('focusout', () => { setTimeout(() => { if(renderPending && !isTyping() && !$('.modal')) safeRender(); }, 250); });
+
+function progress(t){
+  const ps = plotsOf(t.id), o = ord(t); let y = 0, s = 0, e = 0;
+  for(const id of o.ids){ const r = ps[id]; if(!r) continue; if(has(r.weight)) y++; if(has(r.starch)){ s++; if(r.smode === 'est') e++; } }
+  return { n:o.ids.length, y, s, e };
+}
+function renderHeader(){
+  $('#userchip').textContent = M.user || 'Nhập tên';
+  renderStatus();
+  const t = T(), bar = $('#trialbar');
+  bar.hidden = !M.user;
+  if(t){ const p = progress(t); $('#tb-name').textContent = t.name; $('#tb-prog').textContent = `${nf(p.y,0)}/${nf(p.n,0)} ô đã cân`; }
+  else { $('#tb-name').textContent = 'Chọn thí nghiệm'; $('#tb-prog').textContent = ''; }
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+}
+function render(){
+  renderHeader();
+  const m = $('#main');
+  if(!M.user){ m.innerHTML = ''; if(!$('.modal')) openUserModal(true); return; }
+  const t = T();
+  if(tab === 'set') m.innerHTML = viewSettings();
+  else if(!t) m.innerHTML = `<div class="empty"><b>Chưa chọn thí nghiệm.</b><br>Chọn một thí nghiệm có sẵn hoặc tạo mới để bắt đầu nhập số liệu.</div>
+      <div class="btnrow"><button class="btn primary" data-act="trials" type="button">Chọn hoặc tạo thí nghiệm</button></div>`;
+  else if(tab === 'sum') m.innerHTML = viewSummary(t);
+  else m.innerHTML = viewEntry(tab);
+}
+function renderBody(kind){ const b = $('#body-' + kind); if(b) b.innerHTML = bodyEntry(kind); }
+function focusSel(sel){ const el = $(sel); if(el){ el.focus(); if(el.select) el.select(); } }
+
+/* ---- nhập liệu: tìm ô ---- */
+function fillDraft(kind, d, t, id){
+  const r = plotsOf(t.id)[id] || {};
+  if(kind === 'y'){
+    d.plants = has(r.plants) ? String(r.plants) : String(t.nharvest);
+    d.weight = has(r.weight) ? dec(r.weight) : '';
+    d.note = r.note || '';
+  } else {
+    d.smode = r.smode || M.ui.smode || 'direct';
+    d.starch = has(r.starch) && r.smode !== 'est' ? dec(r.starch) : '';
+    d.air = has(r.air) ? dec(r.air) : ''; d.water = has(r.water) ? dec(r.water) : '';
+    d.formula = String(r.formula || '').split(':')[0] || M.ui.formula || 'reimann';
+  }
+  d.sample = has(r.sample) ? dec(r.sample) : '';
+  d.touched = {}; d.dirty = false;
+}
+/* Chọn ô. Trả về false nếu người dùng còn số chưa lưu mà lưu không thành. */
+function setPlot(kind, raw){
+  const t = T(); if(!t) return false;
+  const d = M.draft[kind];
+  const curId = d.plot ? normPlot(t, d.plot) : null, newId = raw ? normPlot(t, raw) : null;
+  if(curId && d.dirty && newId !== curId){
+    if(confirm(`Ô ${curId} chưa lưu.\n\nOK = lưu rồi chuyển ô\nHuỷ = bỏ số vừa nhập`)){
+      if(!(kind === 'y' ? saveY : saveS)(true)) return false;
+    }
+  }
+  const nd = kind === 'y' ? newY() : newS();
+  nd.plot = raw;
+  if(newId) fillDraft(kind, nd, t, newId);
+  M.draft[kind] = nd; saveMeta();
+  return true;
+}
+function viewEntry(kind){
+  const t = T(), d = M.draft[kind], o = ord(t);
+  const id = d.plot ? normPlot(t, d.plot) : null;
+  if(id && !d.dirty && !d.pinned) fillDraft(kind, d, t, id);   // nhận số liệu máy khác vừa gửi về
+  return `
+    <div class="finder">
+      <button class="stepbtn" data-step="-1" data-kind="${kind}" type="button" aria-label="Ô trước">‹</button>
+      <label for="find-${kind}"><span>Ô số</span>
+        <input id="find-${kind}" data-find="${kind}" inputmode="${o.text ? 'text' : 'numeric'}" autocomplete="off" enterkeyhint="next"
+          placeholder="${o.lines ? 'số ô hoặc tên dòng' : 'nhập số ô'}" value="${esc(d.plot)}"></label>
+      <button class="stepbtn" data-step="1" data-kind="${kind}" type="button" aria-label="Ô sau">›</button>
+    </div>
+    <div id="body-${kind}">${bodyEntry(kind)}</div>`;
+}
+function bodyEntry(kind){
+  const t = T(), d = M.draft[kind];
+  const id = d.plot ? normPlot(t, d.plot) : null;
+  if(id) return (kind === 'y' ? formY : formS)(t, d, id);
+  return (d.plot ? noMatch(t, d.plot, kind) : lastSaved(t, kind)) + recent(t, kind);
+}
+function stake(t, id){
+  const r = plotsOf(t.id)[id] || {}, rep = repOf(t, id);
+  return `<div class="stake"><div class="no">${esc(id)}</div><div class="meta">
+    ${r.line ? `<b>${esc(r.line)}</b>` : ''}${rep !== '' ? `<span>Lần lặp ${esc(rep)}</span>` : ''}${!r.line && rep === '' ? `<span>${esc(t.name)}</span>` : ''}</div></div>`;
+}
+function noMatch(t, raw, kind){
+  const o = ord(t), ps = plotsOf(t.id), q = raw.toLowerCase();
+  const hits = o.lines ? o.ids.filter(id => String(ps[id].line || '').toLowerCase().includes(q)).slice(0, 10) : [];
+  if(hits.length) return `<h3>Các ô có tên dòng chứa “${esc(raw)}”</h3><div class="recent">${hits.map(id =>
+    `<button type="button" data-goto="${esc(id)}" data-kind="${kind}"><span class="p">${esc(id)}</span><span>${esc(ps[id].line)}</span><span class="w">${repOf(t,id) !== '' ? 'Lặp ' + esc(repOf(t,id)) : ''}</span></button>`).join('')}</div>`;
+  return `<div class="empty"><b>Không có ô “${esc(raw)}” trong thí nghiệm này.</b><br>${o.layout ? `Sơ đồ có ${nf(o.ids.length,0)} ô.` : `Số ô từ 1 đến ${nf(t.nplots,0)}.`}</div>`;
+}
+function lastSaved(t, kind){
+  const l = M.ui.last[kind];
+  if(!l || l.tr !== t.id) return `<div class="empty"><b>${kind === 'y' ? 'Nhập số ô để cân năng suất.' : 'Nhập số ô để ghi hàm lượng tinh bột.'}</b><br>Gõ số ghi trên cọc, hoặc bấm ‹ › để đi lần lượt.</div>`;
+  const o = ord(t), i = o.pos[l.p], next = i !== undefined ? o.ids[i + 1] : undefined;
+  return `<div class="done"><div class="t">✓ Đã lưu ô ${esc(l.p)}</div><div class="s">${esc(l.txt)}</div>
+    ${next !== undefined ? `<div class="btnrow"><button class="btn primary" type="button" data-goto="${esc(next)}" data-kind="${kind}">Ô kế tiếp: ${esc(next)} ›</button></div>` : ''}</div>`;
+}
+function recent(t, kind){
+  const j = M.journal.filter(x => x.tr === t.id && x.k === kind).slice(0, 8);
+  if(!j.length) return '';
+  return `<h3>Vừa nhập trên máy này</h3><div class="recent">${j.map(x =>
+    `<button type="button" data-goto="${esc(x.p)}" data-kind="${kind}"><span class="p">${esc(x.p)}</span><span>${esc(x.txt)}</span><span class="w">${fmtT(x.t)}</span></button>`).join('')}</div>`;
+}
+const sampleField = kind => `
+  <label class="f"><span>Mẫu cân bột đã lấy trước khi cân ô (kg)</span>
+    <input data-d="${kind}.sample" inputmode="decimal" class="num" placeholder="để trống nếu không có" value="${esc(M.draft[kind].sample)}" autocomplete="off">
+    <small>Được cộng vào khối lượng ô. Để trống nếu mẫu lấy sau khi đã cân ô.</small></label>`;
+
+/* ---- tab Năng suất ---- */
+function formY(t, d, id){
+  const r = plotsOf(t.id)[id] || {};
+  return `${stake(t, id)}
+    ${has(r.weight) ? `<div class="banner"><b>Ô này đã cân:</b> ${nf(totalW(r),2)} kg, ${esc(has(r.plants) ? r.plants : t.nharvest)} cây${r.yby ? ' — ' + esc(r.yby) : ''}${has(r.yat) ? ', ' + fmtDT(r.yat) : ''}. Lưu sẽ ghi đè.</div>` : ''}
+    <div class="f"><span>Số cây thực thu <i class="hintin">thí nghiệm thu ${esc(t.nharvest)} cây mỗi ô</i></span>
+      <div class="stepper">
+        <button type="button" data-plants="-1" aria-label="Bớt một cây">−</button>
+        <input data-d="y.plants" inputmode="numeric" value="${esc(d.plants)}" autocomplete="off">
+        <button type="button" data-plants="1" aria-label="Thêm một cây">+</button>
+      </div>
+</div>
+    <label class="f"><span>Khối lượng củ (kg)</span>
+      <input id="y-weight" data-d="y.weight" inputmode="decimal" class="num big" placeholder="0,0" value="${esc(d.weight)}" autocomplete="off" enterkeyhint="done"></label>
+    <div class="result" id="res-y">${resY(t, d)}</div>
+    ${sampleField('y')}
+    <label class="f"><span>Ghi chú</span><input data-d="y.note" placeholder="không bắt buộc" value="${esc(d.note)}" autocomplete="off"></label>
+    ${has(r.weight) ? `<button class="linkbtn" type="button" data-act="clear-y">Xoá số liệu năng suất của ô ${esc(id)}</button>` : ''}
+    <div class="savepad"></div>
+    <div class="savebar"><button class="btn primary" data-act="save-y" type="button">Lưu ô ${esc(id)}</button></div>`;
+}
+function calcY(t, d){
+  const w = num(d.weight); if(w === null) return null;
+  const s = d.sample === '' ? 0 : num(d.sample), p = d.plants === '' ? t.nharvest : num(d.plants);
+  if(s === null || p === null) return null;
+  const tot = w + s;
+  return { w, s, p, tot, adj: p > 0 ? tot * t.nharvest / p : null };
+}
+function resY(t, d){
+  const c = calcY(t, d);
+  if(!c) return `<div class="e">Nhập khối lượng củ để xem tổng khối lượng ô.</div>`;
+  return `<div class="l main"><span>Tổng khối lượng ô${c.s ? ` (${nf(c.w,2)} + ${nf(c.s,2)})` : ''}</span><b>${nf(c.tot,2)} kg</b></div>
+    ${c.p !== t.nharvest ? `<div class="l"><span>Quy đổi về ${esc(t.nharvest)} cây (thực thu ${nf(c.p,0)})</span><b>${c.adj === null ? '—' : nf(c.adj,2) + ' kg'}</b></div>` : ''}`;
+}
+function saveY(viaSwitch){
+  const t = T(), d = M.draft.y, id = t && normPlot(t, d.plot); if(!id) return false;
+  const w = num(d.weight);
+  if(w === null || w < 0){ toast('Nhập khối lượng củ'); focusSel('#y-weight'); return false; }
+  const p = d.plants === '' ? t.nharvest : num(d.plants);
+  if(p === null || p < 0 || p % 1){ toast('Số cây thực thu chưa đúng'); return false; }
+  const s = d.sample === '' ? null : num(d.sample);
+  if(d.sample !== '' && (s === null || s < 0)){ toast('Lượng mẫu cân bột chưa đúng'); return false; }
+  const tot = w + (s || 0);
+  if(p > 0 && tot / p > 15 && !confirm(`Ô ${id}: ${nf(tot,2)} kg cho ${p} cây, tức ${nf(tot/p,1)} kg mỗi cây.\nCon số này có đúng không?`)) return false;
+  const fields = { plants:p, weight:w, yby:M.user, yat:Date.now() };
+  if(d.touched.sample) fields.sample = s === null ? '' : s;
+  if(d.touched.note) fields.note = d.note.trim();
+  const adj = p > 0 ? tot * t.nharvest / p : null;
+  commitPlot(t, id, fields, 'y', `${nf(tot,2)} kg · ${p} cây` + (p !== t.nharvest && adj !== null ? ` · quy đổi ${nf(adj,2)} kg` : ''));
+  if(!viaSwitch) afterSave('y', id);
+  return true;
+}
+
+/* ---- tab Tinh bột ---- */
+function formS(t, d, id){
+  const r = plotsOf(t.id)[id] || {};
+  const fid = d.formula || 'reimann';
+  return `${stake(t, id)}
+    ${has(r.starch) ? `<div class="banner"><b>Ô này đã có tinh bột:</b> ${nf(r.starch,1)} %${r.smode === 'est' ? ' (ước tính)' : ''}${r.sby ? ' — ' + esc(r.sby) : ''}${has(r.sat) ? ', ' + fmtDT(r.sat) : ''}. Lưu sẽ ghi đè.</div>` : ''}
+    <div class="chips">
+      <button class="chip ${d.smode !== 'est' ? 'on' : ''}" type="button" data-smode="direct">Đủ 5 kg · đo trực tiếp</button>
+      <button class="chip ${d.smode === 'est' ? 'on' : ''}" type="button" data-smode="est">Thiếu mẫu · cân khô, ướt</button>
+    </div>
+    ${d.smode !== 'est' ? `
+      <label class="f"><span>Hàm lượng tinh bột (%)</span>
+        <input id="s-main" data-d="s.starch" inputmode="decimal" class="num big" placeholder="0,0" value="${esc(d.starch)}" autocomplete="off" enterkeyhint="done">
+        <small>Đọc trên cân tinh bột với mẫu đủ 5 kg.</small></label>` : `
+      <div class="row">
+        <label class="f"><span>Cân khô <i class="hintin">trong không khí</i></span><input id="s-main" data-d="s.air" inputmode="decimal" class="num big" placeholder="0" value="${esc(d.air)}" autocomplete="off" enterkeyhint="next"></label>
+        <label class="f"><span>Cân ướt <i class="hintin">trong nước</i></span><input id="s-water" data-d="s.water" inputmode="decimal" class="num big" placeholder="0" value="${esc(d.water)}" autocomplete="off" enterkeyhint="done"></label>
+      </div>
+      <p class="muted small" style="margin-top:-6px">Hai số cùng một đơn vị (g hoặc kg), đã trừ bì giỏ.</p>
+      <h3>Công thức ước tính</h3>
+      <div class="chips">${FORMULAS.map(f => `<button class="chip ${fid === f.id ? 'on' : ''}" type="button" data-formula="${f.id}">${esc(f.name)}</button>`).join('')}</div>`}
+    <div class="result" id="res-s">${resS(t, d)}</div>
+    ${sampleField('s')}
+    ${has(r.starch) ? `<button class="linkbtn" type="button" data-act="clear-s">Xoá số liệu tinh bột của ô ${esc(id)}</button>` : ''}
+    <div class="savepad"></div>
+    <div class="savebar"><button class="btn primary" data-act="save-s" type="button">Lưu tinh bột ô ${esc(id)}</button></div>`;
+}
+/* Trả về { starch, est, sg, ... } hoặc { err } hoặc null khi chưa đủ số */
+function calcS(t, d){
+  if(d.smode !== 'est'){
+    if(d.starch === '') return null;
+    const v = num(d.starch); return v === null || v < 0 || v > 100 ? { err:'Hàm lượng tinh bột chưa đúng' } : { starch:v, est:false };
+  }
+  if(d.air === '' || d.water === '') return null;
+  const a = num(d.air), w = num(d.water);
+  if(a === null || w === null || a <= 0 || w < 0) return { err:'Số cân chưa đúng' };
+  if(w >= a) return { err:'Cân ướt phải nhỏ hơn cân khô' };
+  const fid = d.formula || 'reimann', c = coef(t, fid);
+  if(!c) return { err:'Chưa có hệ số riêng — nhập trong Cài đặt › Sửa thí nghiệm' };
+  const sg = a / (a - w), st = c.a * sg + c.b;
+  return { starch: Math.round(st * 100) / 100, est:true, sg, a, w, fid, c };
+}
+function resS(t, d){
+  const c = calcS(t, d);
+  if(!c) return `<div class="e">${d.smode === 'est' ? 'Nhập cân khô và cân ướt để ước tính tinh bột.' : 'Nhập số đọc trên cân tinh bột.'}</div>`;
+  if(c.err) return `<div class="e bad">${esc(c.err)}</div>`;
+  if(!c.est) return `<div class="l main"><span>Hàm lượng tinh bột</span><b>${nf(c.starch,1)} %</b></div>`;
+  const odd = c.sg < 1.02 || c.sg > 1.22 || c.starch < 3 || c.starch > 45;
+  return `<div class="l"><span>Tỷ trọng</span><b>${nf(c.sg,3)}</b></div>
+    <div class="l main"><span>Tinh bột ước tính</span><b>${nf(c.starch,1)} %</b></div>
+    <div class="e${odd ? ' bad' : ''}">${odd ? 'Kết quả bất thường — kiểm tra lại hai số cân. ' : ''}= ${nf(c.c.a,1)} × tỷ trọng ${c.c.b < 0 ? '−' : '+'} ${nf(Math.abs(c.c.b),1)}</div>`;
+}
+function saveS(viaSwitch){
+  const t = T(), d = M.draft.s, id = t && normPlot(t, d.plot); if(!id) return false;
+  const c = calcS(t, d);
+  if(!c){ toast(d.smode === 'est' ? 'Nhập cân khô và cân ướt' : 'Nhập hàm lượng tinh bột'); focusSel('#s-main'); return false; }
+  if(c.err){ toast(c.err); return false; }
+  if((c.starch < 5 || c.starch > 40) && !confirm(`Ô ${id}: tinh bột ${nf(c.starch,1)} %.\nCon số này có đúng không?`)) return false;
+  const s = d.sample === '' ? null : num(d.sample);
+  if(d.sample !== '' && (s === null || s < 0)){ toast('Lượng mẫu cân bột chưa đúng'); return false; }
+  const fields = c.est
+    ? { smode:'est', starch:c.starch, air:c.a, water:c.w, formula: c.fid === 'custom' ? `custom:${c.c.a}:${c.c.b}` : c.fid, sby:M.user, sat:Date.now() }
+    : { smode:'direct', starch:c.starch, air:'', water:'', formula:'', sby:M.user, sat:Date.now() };
+  if(d.touched.sample) fields.sample = s === null ? '' : s;
+  M.ui.smode = d.smode; if(c.est) M.ui.formula = c.fid;
+  commitPlot(t, id, fields, 's', `${nf(c.starch,1)} %` + (c.est ? ` · ước tính (tỷ trọng ${nf(c.sg,3)})` : ' · đo trực tiếp'));
+  if(!viaSwitch) afterSave('s', id);
+  return true;
+}
+
+function commitPlot(t, id, fields, kind, txt){
+  const ps = plotsOf(t.id);
+  ps[id] = applyFields(ps[id], fields);
+  savePlots(t.id);
+  M.journal.unshift({ t:Date.now(), tr:t.id, p:id, k:kind, txt }); if(M.journal.length > 300) M.journal.length = 300;
+  M.ui.last[kind] = { tr:t.id, p:id, txt };
+  enqueue({ op:'plot', trial:t.id, plot:id, fields });
+}
+function afterSave(kind, id){
+  M.draft[kind] = kind === 'y' ? newY() : newS(); saveMeta();
+  render(); window.scrollTo(0, 0);
+  toast(`Đã lưu ô ${id}`);
+  focusSel('#find-' + kind);
+}
+function clearData(kind){
+  const t = T(), d = M.draft[kind], id = t && normPlot(t, d.plot); if(!id) return;
+  if(!confirm(`Xoá số liệu ${kind === 'y' ? 'năng suất' : 'tinh bột'} của ô ${id}?`)) return;
+  const fields = kind === 'y' ? { plants:'', weight:'', note:'', yby:'', yat:'' } : { smode:'', starch:'', air:'', water:'', formula:'', sby:'', sat:'' };
+  commitPlot(t, id, fields, kind, 'đã xoá số liệu');
+  afterSave(kind, id);
+}
+function gotoPlot(kind, id){
+  if(tab !== kind) tab = kind;
+  if(!setPlot(kind, id)) return;
+  render(); window.scrollTo(0, 0);
+  focusSel(kind === 'y' ? '#y-weight' : '#s-main');
+}
+function stepPlot(kind, dir){
+  const t = T(); if(!t) return;
+  const o = ord(t), d = M.draft[kind]; if(!o.ids.length) return;
+  let base = d.plot ? normPlot(t, d.plot) : null;
+  if(base === null && M.ui.last[kind] && M.ui.last[kind].tr === t.id) base = M.ui.last[kind].p;
+  let i = base !== null && o.pos[base] !== undefined ? o.pos[base] + dir : (dir > 0 ? 0 : o.ids.length - 1);
+  if(i < 0 || i >= o.ids.length){ toast(dir > 0 ? 'Đã tới ô cuối' : 'Đã ở ô đầu'); return; }
+  gotoPlot(kind, o.ids[i]);
+}
+
+/* ---- tab Tổng hợp ---- */
+function summaryRows(t){
+  const ps = plotsOf(t.id), o = ord(t);
+  return o.ids.map(id => {
+    const r = ps[id] || {}, adj = adjW(t, r), st = starchOf(r);
+    return { id, line:r.line || '', rep:repOf(t, id), adj, st, est:r.smode === 'est',
+      short: has(r.weight) && has(r.plants) && Number(r.plants) !== t.nharvest, prod: adj !== null && st !== null ? adj * st / 100 : null };
+  });
+}
+function byLine(rows){
+  const g = new Map(), mean = a => a.length ? a.reduce((x,y) => x + y, 0) / a.length : null;
+  for(const r of rows){ if(!r.line) continue; if(!g.has(r.line)) g.set(r.line, []); g.get(r.line).push(r); }
+  return [...g.entries()].map(([line, rs]) => ({ id:line, line:'', n:rs.length, plots:rs.map(r => r.id),
+    st: mean(rs.filter(r => r.st !== null).map(r => r.st)), adj: mean(rs.filter(r => r.adj !== null).map(r => r.adj)),
+    prod: mean(rs.filter(r => r.prod !== null).map(r => r.prod)), est: rs.some(r => r.est), short: rs.some(r => r.short) }));
+}
+function pearson(rows){
+  const v = rows.filter(r => r.st !== null && r.adj !== null), n = v.length; if(n < 5) return { n, r:null };
+  const mx = v.reduce((a,r) => a + r.st, 0) / n, my = v.reduce((a,r) => a + r.adj, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for(const r of v){ sxy += (r.st - mx) * (r.adj - my); sxx += (r.st - mx) ** 2; syy += (r.adj - my) ** 2; }
+  return { n, r: sxx && syy ? sxy / Math.sqrt(sxx * syy) : null };
+}
+function viewSummary(t){
+  const all = summaryRows(t), p = progress(t), o = ord(t);
+  const byL = o.lines && M.ui.by === 'line';
+  const key = { starch:'st', adj:'adj', prod:'prod' }[M.ui.rank] || 'st';
+  const rows = (byL ? byLine(all) : all).filter(r => r[key] !== null).sort((a,b) => b[key] - a[key]);
+  const cor = pearson(all), shown = rows.slice(0, rankLimit);
+  const chips = [['starch','Hàm lượng tinh bột'],['adj','Khối lượng ô'],['prod','Tinh bột × Khối lượng']]
+    .map(([k,l]) => `<button class="chip ${M.ui.rank === k ? 'on' : ''}" type="button" data-rank="${k}">${l}</button>`).join('');
+  const td = (k, html) => `<td class="${key === k ? 'k' : ''}">${html}</td>`;
+  return `
+    <h2>Tổng hợp</h2>
+    <div class="prog">
+      <div><b>${nf(p.y,0)}<i>/${nf(p.n,0)}</i></b><span>ô đã cân</span></div>
+      <div><b>${nf(p.s,0)}<i>/${nf(p.n,0)}</i></b><span>ô có tinh bột</span></div>
+      <div><b>${nf(p.e,0)}</b><span>ô ước tính</span></div>
+    </div>
+    <div class="btnrow" style="margin-top:0">
+      <button class="btn sm" type="button" data-act="missing-y">Ô chưa cân (${nf(p.n - p.y,0)})</button>
+      <button class="btn sm" type="button" data-act="missing-s">Ô chưa có tinh bột (${nf(p.n - p.s,0)})</button>
+    </div>
+    <h3>Xếp hạng từ cao xuống thấp theo</h3>
+    <div class="chips">${chips}</div>
+    ${o.lines ? `<div class="chips">
+      <button class="chip ${!byL ? 'on' : ''}" type="button" data-by="plot">Từng ô</button>
+      <button class="chip ${byL ? 'on' : ''}" type="button" data-by="line">Từng dòng · trung bình các lặp</button></div>` : ''}
+    ${cor.r !== null ? `<p class="muted small">Tương quan giữa tinh bột và khối lượng ô: <b style="color:var(--ink)">r = ${nf(cor.r,2)}</b> (${nf(cor.n,0)} ô có đủ hai số).</p>` : ''}
+    ${rows.length ? `<div class="tablewrap"><table>
+      <tr><th>#</th><th>${byL ? 'Dòng' : 'Ô'}</th><th class="${key === 'st' ? 'k' : ''}">Tinh bột<br>%</th><th class="${key === 'adj' ? 'k' : ''}">KL ô<br>kg</th><th class="${key === 'prod' ? 'k' : ''}">TB × KL<br>kg</th></tr>
+      ${shown.map((r,i) => `<tr ${byL ? '' : `data-goto="${esc(r.id)}" data-kind="y"`}>
+        <td>${i + 1}</td>
+        <td><b>${esc(r.id)}</b>${byL ? `<span class="ln">${r.n} ô: ${esc(r.plots.join(', '))}</span>` : (r.line ? `<span class="ln">${esc(r.line)}${r.rep !== '' ? ' · L' + esc(r.rep) : ''}</span>` : (r.rep !== '' ? `<span class="ln">Lặp ${esc(r.rep)}</span>` : ''))}</td>
+        ${td('st', r.st === null ? '—' : nf(r.st,1) + (r.est ? '<span class="est">ƯT</span>' : ''))}
+        ${td('adj', r.adj === null ? '—' : nf(r.adj,1) + (r.short ? '*' : ''))}
+        ${td('prod', r.prod === null ? '—' : nf(r.prod,2))}</tr>`).join('')}
+    </table></div>
+    ${rows.length > shown.length ? `<div class="btnrow"><button class="btn sm" type="button" data-act="more">Xem thêm ${Math.min(100, rows.length - shown.length)} / còn ${nf(rows.length - shown.length,0)}</button></div>` : ''}
+    <p class="muted small" style="margin-top:10px"><span class="est" style="margin-left:0">ƯT</span> tinh bột ước tính từ cân khô, cân ướt.
+      <b>*</b> ô thiếu cây: khối lượng đã quy đổi về ${esc(t.nharvest)} cây. Cột “TB × KL” là số kg tinh bột của ô (khối lượng ô × % tinh bột).</p>`
+    : `<div class="empty"><b>Chưa có số liệu để xếp hạng.</b><br>Bảng sẽ hiện khi có ô được ${key === 'st' ? 'ghi tinh bột' : key === 'adj' ? 'cân năng suất' : 'cân đủ cả năng suất và tinh bột'}.</div>`}`;
+}
+function openMissing(kind){
+  const t = T(), ps = plotsOf(t.id), o = ord(t), f = kind === 'y' ? 'weight' : 'starch';
+  const miss = o.ids.filter(id => !ps[id] || !has(ps[id][f]));
+  openModal(`<h2>${kind === 'y' ? 'Ô chưa cân năng suất' : 'Ô chưa có tinh bột'} (${nf(miss.length,0)})</h2>
+    ${miss.length ? `<div class="plist">${miss.slice(0, 400).map(id => `<button type="button" data-goto="${esc(id)}" data-kind="${kind}">${esc(id)}</button>`).join('')}</div>
+      ${miss.length > 400 ? `<p class="muted small" style="margin-top:10px">Hiện 400 ô đầu trong ${nf(miss.length,0)} ô.</p>` : ''}` : `<div class="empty"><b>Đã đủ tất cả các ô.</b></div>`}
+    <div class="btnrow"><button class="btn" type="button" data-act="closemodal">Đóng</button></div>`);
+}
+
+/* ---- tab Cài đặt ---- */
+function viewSettings(){
+  const t = T(), connected = !!M.settings.url, o = t && ord(t);
+  return `
+    <h2>Cài đặt</h2>
+    <h3>Thí nghiệm đang nhập</h3>
+    ${t ? `<div class="kv">
+        <div><span>Tên</span><b>${esc(t.name)}</b></div>
+        <div><span>Năm · địa điểm</span><b>${esc(t.year || '—')} · ${esc(t.location || '—')}</b></div>
+        <div><span>Số ô · lần lặp</span><b>${nf(o.ids.length,0)} ô · ${esc(t.nreps)} lặp${o.layout ? ' · có sơ đồ' : ''}</b></div>
+        <div><span>Số cây thu hoạch mỗi ô</span><b>${esc(t.nharvest)}</b></div>
+        <div><span>Người tạo</span><b>${esc(t.by || '—')}</b></div></div>` : `<div class="empty">Chưa chọn thí nghiệm.</div>`}
+    <div class="btnrow">
+      <button class="btn" type="button" data-act="trials">Đổi thí nghiệm</button>
+      ${t ? `<button class="btn" type="button" data-act="edittrial">Sửa, sơ đồ ô</button>` : ''}
+    </div>
+
+    <h3>Sổ chung (Google Sheet)</h3>
+    <form id="setform" autocomplete="off">
+      <label class="f"><span>Địa chỉ Web app (Apps Script)</span><input name="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(M.settings.url)}"></label>
+      <label class="f"><span>Mã nhóm</span><input name="key" placeholder="HARC2026" value="${esc(M.settings.key)}"></label>
+      <div class="btnrow" style="margin-top:0">
+        <button class="btn primary" type="submit">Lưu và kết nối</button>
+        ${connected ? `<button class="btn" type="button" data-act="resync">Tải lại toàn bộ</button>` : ''}
+      </div>
+    </form>
+    ${connected ? `<div class="btnrow"><button class="btn sm" type="button" data-act="invite">Sao chép link mời cho người trong nhóm</button></div>
+      <p class="muted small" style="margin-top:8px">Người nhận mở link là máy tự nối sổ chung, không phải gõ địa chỉ và mã nhóm. Mỗi lần bấm Lưu ô, số liệu được gửi ngay lên Google Sheet; số của máy khác về sau khoảng 20 giây. Mất mạng vẫn nhập bình thường.</p>`
+    : `<p class="muted small" style="margin-top:8px">Chưa nối sổ chung: số liệu chỉ nằm trên máy này và người khác không thấy thí nghiệm bạn tạo. Xem file hướng dẫn để tạo Google Sheet dùng chung.</p>`}
+    ${M.failed.length ? `<div class="banner" style="margin-top:12px"><b>${M.failed.length} thao tác gửi lỗi</b> (${esc(M.failed[0].err || '')}). Số liệu vẫn còn trên máy này.
+      <div class="btnrow"><button class="btn sm" type="button" data-act="retry">Gửi lại</button></div></div>` : ''}
+
+    <h3>Xuất file</h3>
+    <div class="btnrow" style="margin-top:0">
+      <button class="btn primary" type="button" data-act="csv" ${t ? '' : 'disabled'}>CSV thí nghiệm này</button>
+      <button class="btn" type="button" data-act="backup">File sao lưu</button>
+    </div>
+    <p class="muted small" style="margin-top:8px">CSV có mỗi ô một dòng, kể cả ô chưa cân, theo đúng thứ tự ô — mở được bằng Excel và R.</p>
+    <label class="btn sm" style="cursor:pointer">Khôi phục từ file sao lưu<input type="file" accept=".json,application/json" id="importfile" hidden></label>
+
+    <h3>Người thu thập</h3>
+    <div class="btnrow" style="margin-top:0"><button class="btn" type="button" data-act="user">${esc(M.user)} — đổi tên</button></div>
+
+    <h3>Phiên bản</h3>
+    <div class="kv">
+      <div><span>Ứng dụng</span><b>HARCASSAVA ${APP_VERSION}</b></div>
+      <div><span>Mở được khi mất mạng</span><b>${offlineReady() ? 'Có' : 'Chưa'}</b></div>
+      <div><span>Chờ gửi lên sổ chung</span><b>${M.queue.length}</b></div>
+      <div><span>Lần đồng bộ gần nhất</span><b>${M.lastSync ? fmtDT(M.lastSync + 15000) : '—'}</b></div>
+    </div>
+    <div class="btnrow" style="margin-top:20px"><button class="btn danger" type="button" data-act="wipe">Xoá dữ liệu trên máy này</button></div>
+    <p class="muted small" style="margin-top:6px">Chỉ xoá bản sao trên điện thoại; số liệu trên Google Sheet không bị ảnh hưởng.</p>`;
+}
+
+/* ================= file ================= */
+function buildCSV(t){
+  const ps = plotsOf(t.id), o = ord(t);
+  const head = ['trial','year','location','plot','rep','line','plants_planned','plants_harvested','root_weight_kg','starch_sample_kg',
+    'plot_weight_kg','plot_weight_adj_kg','starch_pct','starch_method','weight_air','weight_water','specific_gravity','formula',
+    'starch_yield_kg','note','yield_by','yield_time','starch_by','starch_time'];
+  const q = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+  const r4 = v => v === null || v === undefined ? '' : Math.round(v * 10000) / 10000;
+  const lines = [head.join(',')];
+  for(const id of o.ids){
+    const r = ps[id] || {}, tw = totalW(r), adj = adjW(t, r), st = starchOf(r);
+    const sg = has(r.air) && has(r.water) && Number(r.air) > Number(r.water) ? Number(r.air) / (Number(r.air) - Number(r.water)) : null;
+    lines.push([t.name, t.year, t.location, id, repOf(t, id), r.line || '', t.nharvest,
+      has(r.weight) ? (has(r.plants) ? r.plants : t.nharvest) : '', has(r.weight) ? r.weight : '', has(r.sample) ? r.sample : '',
+      r4(tw), r4(adj), st === null ? '' : st, r.smode === 'est' ? 'estimated' : (st === null ? '' : 'direct'),
+      has(r.air) ? r.air : '', has(r.water) ? r.water : '', r4(sg), r.formula || '',
+      adj !== null && st !== null ? r4(adj * st / 100) : '', r.note || '', r.yby || '', isoLocal(r.yat), r.sby || '', isoLocal(r.sat)].map(q).join(','));
+  }
+  return '﻿' + lines.join('\r\n');
+}
+async function saveFile(filename, text){
+  const type = filename.endsWith('.csv') ? 'text/csv;charset=utf-8' : 'application/json';
+  try{
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = filename; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('Đang lưu ' + filename); return;
+  }catch(e){}
+  try{
+    if(navigator.canShare){ const f = new File([text], filename, { type }); if(navigator.canShare({ files:[f] })){ await navigator.share({ files:[f], title:filename }); return; } }
+  }catch(e){}
+  openModal(`<h2>Sao chép nội dung</h2><p class="muted small">Dán vào Ghi chú, Zalo hoặc email rồi lưu với tên <b>${esc(filename)}</b>.</p>
+    <textarea class="csvbox" id="csvbox" readonly>${esc(text)}</textarea>
+    <div class="btnrow"><button class="btn" type="button" data-act="closemodal">Đóng</button><button class="btn primary" type="button" data-act="copybox">Sao chép</button></div>`);
+}
+const fileSlug = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'') || 'thi_nghiem';
+function restoreBackup(obj){
+  if(!obj || obj.app !== 'harcassava' || !obj.trials) throw new Error('bad');
+  let n = 0;
+  for(const t0 of Object.values(obj.trials)){
+    const t = normTrial(t0);
+    if(!M.trials[t.id]){ M.trials[t.id] = t; enqueue({ op:'trial', trial:t }); }
+    const src = (obj.plots || {})[t.id] || {}, ps = plotsOf(t.id), lay = [];
+    for(const id of Object.keys(src)){
+      const a = src[id], b = ps[id] || {}, fields = {};
+      if(has(a.ord) && !has(b.ord)) lay.push([id, a.rep ?? '', a.line ?? '', a.ord]);
+      if(has(a.weight) && (!has(b.weight) || Number(a.yat || 0) > Number(b.yat || 0))) ['plants','weight','sample','note','yby','yat'].forEach(k => { if(has(a[k])) fields[k] = a[k]; });
+      if(has(a.starch) && (!has(b.starch) || Number(a.sat || 0) > Number(b.sat || 0))) ['smode','starch','air','water','formula','sby','sat'].forEach(k => { if(has(a[k])) fields[k] = a[k]; });
+      if(Object.keys(fields).length){ ps[id] = applyFields(b, fields); enqueue({ op:'plot', trial:t.id, plot:id, fields }); n++; }
+    }
+    if(lay.length && !ord(t).layout){ const rows = lay.sort((x,y) => x[3] - y[3]).map(r => r.slice(0,3)); applyLayoutLocal(t.id, rows); enqueue({ op:'layout', trial:t.id, rows }); }
+    bust(t.id); savePlots(t.id);
+  }
+  saveMeta(); return n;
+}
+
+/* ================= hộp thoại ================= */
+function openModal(html, kind){ modalKind = kind || ''; $('#modal').innerHTML = `<div class="modal"><div class="box">${html}</div></div>`; }
+function closeModal(){ modalKind = ''; $('#modal').innerHTML = ''; if(renderPending) safeRender(); }
+function openUserModal(force){
+  openModal(`<h2>Ai đang thu số liệu?</h2>
+    <p class="muted">Tên này được ghi kèm mỗi ô bạn nhập, để sau biết ai cân ô nào.</p>
+    <form id="uform" autocomplete="off">
+      <label class="f"><span>Tên người thu thập</span><input name="name" placeholder="Ví dụ: Hùng" value="${esc(M.user)}" required></label>
+      <div class="btnrow">${force ? '' : `<button class="btn" type="button" data-act="closemodal">Đóng</button>`}<button class="btn primary" type="submit">${force ? 'Tiếp tục' : 'Lưu'}</button></div>
+    </form>`);
+  focusSel('#uform input');
+}
+function openTrialsModal(){
+  const list = liveTrials();
+  openModal(`<h2>Chọn thí nghiệm</h2>
+    ${list.length ? `<div class="tlist">${list.map(t => { const p = progress(t); return `
+      <button type="button" class="${t.id === M.cur ? 'on' : ''}" data-pick="${esc(t.id)}"><b>${esc(t.name)}</b>
+      <span>${esc(t.year || '')}${t.location ? ' · ' + esc(t.location) : ''} · ${nf(p.n,0)} ô · ${esc(t.nreps)} lặp · đã cân ${nf(p.y,0)}${t.by ? ' · tạo bởi ' + esc(t.by) : ''}</span></button>`; }).join('')}</div>`
+    : `<div class="empty" style="margin-bottom:14px"><b>Chưa có thí nghiệm nào.</b><br>${M.settings.url ? 'Sổ chung chưa có thí nghiệm — hãy tạo mới.' : 'Nếu người khác đã tạo thí nghiệm, hãy nối sổ chung trong tab Cài đặt (hoặc mở link mời) để thấy.'}</div>`}
+    <div class="btnrow">
+      <button class="btn" type="button" data-act="closemodal">Đóng</button>
+      <button class="btn primary" type="button" data-act="newtrial">Tạo thí nghiệm mới</button>
+    </div>
+    ${M.settings.url ? '' : `<div class="btnrow"><button class="btn sm" type="button" data-act="gosettings">Nối sổ chung để thấy thí nghiệm của nhóm</button></div>`}`, 'trials');
+}
+function openTrialForm(t){
+  const e = t || {}, o = t && ord(t);
+  openModal(`<h2>${t ? 'Sửa thí nghiệm' : 'Thí nghiệm mới'}</h2>
+    <form id="tform" autocomplete="off" data-id="${esc(e.id || '')}">
+      ${t ? '' : `<div class="chips"><button class="chip" type="button" data-preset="PYT">Mẫu PYT · 2 lặp</button><button class="chip" type="button" data-preset="AYT">Mẫu AYT · 3 lặp</button></div>`}
+      <label class="f"><span>Tên thí nghiệm</span><input name="name" placeholder="Ví dụ: PYT 2026 Hưng Lộc" value="${esc(e.name || '')}" required></label>
+      <div class="row">
+        <label class="f"><span>Năm thực hiện</span><input name="year" inputmode="numeric" value="${esc(e.year || new Date().getFullYear())}"></label>
+        <label class="f"><span>Địa điểm</span><input name="location" placeholder="Hưng Lộc" value="${esc(e.location || '')}"></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>Tổng số ô</span><input name="nplots" inputmode="numeric" class="num" placeholder="ví dụ 600" value="${esc(o ? o.ids.length : '')}" ${o && o.layout ? 'readonly' : ''}></label>
+        <label class="f"><span>Số lần lặp</span><input name="nreps" inputmode="numeric" class="num" value="${esc(e.nreps || 2)}"></label>
+        <label class="f"><span>Cây thu / ô</span><input name="nharvest" inputmode="numeric" class="num" value="${esc(e.nharvest || 10)}"></label>
+      </div>
+      <p class="muted small" style="margin-top:-6px">Tổng số ô tính cả các lần lặp. Ví dụ 300 dòng × 2 lặp = 600 ô, đánh số từ 1 đến 600.</p>
+      <label class="f"><span>Sơ đồ ô — không bắt buộc</span>
+        <textarea name="layout" placeholder="Dán từ Excel, mỗi dòng một ô:&#10;số ô, lần lặp, tên dòng&#10;101	1	KM505-54&#10;102	1	HN1"></textarea>
+        <small>${o && o.layout ? `Đang có sơ đồ ${nf(o.ids.length,0)} ô. Dán sơ đồ mới để thay; để trống là giữ nguyên.` : 'Có sơ đồ thì app hiện tên dòng trên từng ô, tìm được theo tên dòng và xếp hạng theo dòng. Không có thì các ô được đánh số 1, 2, 3…'}</small></label>
+      ${t ? `<h3>Hệ số riêng cho công thức ước tính tinh bột</h3>
+        <div class="row">
+          <label class="f"><span>a</span><input name="fa" inputmode="decimal" class="num" placeholder="206,4" value="${esc(has(e.fa) ? dec(e.fa) : '')}"></label>
+          <label class="f"><span>b</span><input name="fb" inputmode="text" class="num" placeholder="-208,3" value="${esc(has(e.fb) ? dec(e.fb) : '')}"></label>
+        </div>
+        <p class="muted small" style="margin-top:-6px">Tinh bột (%) = a × tỷ trọng + b. Chỉ cần điền khi dùng công thức “Hệ số riêng”.</p>` : ''}
+      <div class="btnrow"><button class="btn" type="button" data-act="${t ? 'closemodal' : 'trials'}">Huỷ</button><button class="btn primary" type="submit">${t ? 'Lưu thay đổi' : 'Tạo thí nghiệm'}</button></div>
+      ${t ? `<div class="btnrow"><button class="btn danger sm" type="button" data-act="deltrial">Xoá thí nghiệm này khỏi danh sách</button></div>` : ''}
+    </form>`);
+}
+function submitTrial(f){
+  const old = f.dataset.id ? M.trials[f.dataset.id] : null;
+  const name = fv(f,'name').value.trim(); if(!name) return toast('Nhập tên thí nghiệm');
+  const nreps = parseInt(fv(f,'nreps').value, 10), nharvest = parseInt(fv(f,'nharvest').value, 10);
+  if(!(nreps > 0)) return toast('Số lần lặp chưa đúng');
+  if(!(nharvest > 0)) return toast('Số cây thu hoạch chưa đúng');
+  let rows = null; const lt = fv(f,'layout').value.trim();
+  if(lt){ const pr = parseLayout(lt); if(pr.error) return toast(pr.error); if(!pr.rows.length) return toast('Sơ đồ ô không đọc được'); rows = pr.rows; }
+  const keepLayout = old && ord(old).layout && !rows;
+  let nplots = rows ? rows.length : (keepLayout ? ord(old).ids.length : parseInt(fv(f,'nplots').value, 10));
+  if(!(nplots > 0)) return toast('Nhập tổng số ô, hoặc dán sơ đồ ô');
+  if(nplots > 6000) return toast('Tối đa 6.000 ô cho một thí nghiệm');
+  const t = normTrial(Object.assign({}, old || { id:newId(), by:M.user, created:Date.now() },
+    { name, year: parseInt(fv(f,'year').value, 10) || '', location: fv(f,'location').value.trim(), nplots, nreps, nharvest }));
+  if(old){ const a = num(fv(f,'fa').value), b = num(fv(f,'fb').value); t.fa = a === null ? '' : a; t.fb = b === null ? '' : b; }
+  M.trials[t.id] = t; bust(t.id);
+  enqueue({ op:'trial', trial:t });
+  if(rows){ applyLayoutLocal(t.id, rows); savePlots(t.id); enqueue({ op:'layout', trial:t.id, rows }); }
+  if(M.cur !== t.id){ M.cur = t.id; M.draft = { y:newY(), s:newS() }; rankLimit = 100; }
+  saveMeta(); closeModal(); render();
+  toast(old ? 'Đã lưu thí nghiệm' : `Đã tạo ${t.name} — ${nf(nplots,0)} ô`);
+}
+function pickTrial(id){
+  if(M.cur !== id){
+    const d = M.draft; if((d.y.dirty || d.s.dirty) && !confirm('Còn số chưa lưu ở thí nghiệm đang mở. Vẫn đổi thí nghiệm?')) return;
+    M.cur = id; M.draft = { y:newY(), s:newS() }; rankLimit = 100; saveMeta();
+  }
+  closeModal(); render(); window.scrollTo(0, 0);
+}
+
+/* ================= sự kiện ================= */
+$('#nav').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tab]'); if(!b) return;
+  tab = b.dataset.tab; render(); window.scrollTo(0, 0);
+});
+$('#userchip').addEventListener('click', () => openUserModal(false));
+$('#trialbar').addEventListener('click', openTrialsModal);
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-step],[data-goto],[data-plants],[data-smode],[data-formula],[data-rank],[data-by],[data-pick],[data-preset],[data-act]');
+  if(!el) return;
+  const ds = el.dataset;
+  if(ds.step){ stepPlot(ds.kind, +ds.step); return; }
+  if(ds.goto){ closeModal(); gotoPlot(ds.kind, ds.goto); return; }
+  if(ds.plants){
+    const t = T(), d = M.draft.y, cur = d.plants === '' ? t.nharvest : (num(d.plants) ?? t.nharvest);
+    d.plants = String(Math.max(0, cur + (+ds.plants))); d.touched.plants = true; d.dirty = true; saveMeta();
+    const i = $('[data-d="y.plants"]'); if(i) i.value = d.plants; updateRes('y'); return;
+  }
+  if(ds.smode){ const d = M.draft.s; d.smode = ds.smode; d.pinned = true; saveMeta(); renderBody('s'); focusSel('#s-main'); return; }
+  if(ds.formula){ const d = M.draft.s; d.formula = ds.formula; d.pinned = true; saveMeta(); renderBody('s'); return; }
+  if(ds.rank){ M.ui.rank = ds.rank; rankLimit = 100; saveMeta(); render(); return; }
+  if(ds.by){ M.ui.by = ds.by; rankLimit = 100; saveMeta(); render(); return; }
+  if(ds.pick){ pickTrial(ds.pick); return; }
+  if(ds.preset){ const f = el.closest('form'), n = fv(f,'name'); fv(f,'nreps').value = ds.preset === 'AYT' ? 3 : 2;
+    if(!n.value.trim() || /^(PYT|AYT) \d{4}/.test(n.value)) n.value = `${ds.preset} ${fv(f,'year').value || new Date().getFullYear()} ${fv(f,'location').value}`.trim(); return; }
+  const act = ds.act, t = T();
+  if(act === 'closemodal') closeModal();
+  else if(act === 'save-y') saveY();
+  else if(act === 'save-s') saveS();
+  else if(act === 'clear-y') clearData('y');
+  else if(act === 'clear-s') clearData('s');
+  else if(act === 'more'){ rankLimit += 100; render(); }
+  else if(act === 'missing-y') openMissing('y');
+  else if(act === 'missing-s') openMissing('s');
+  else if(act === 'trials') openTrialsModal();
+  else if(act === 'newtrial') openTrialForm(null);
+  else if(act === 'edittrial'){ if(t) openTrialForm(t); }
+  else if(act === 'gosettings'){ closeModal(); tab = 'set'; render(); }
+  else if(act === 'user') openUserModal(false);
+  else if(act === 'resync'){ M.lastSync = 0; saveMeta(); sync('manual'); toast('Đang tải lại toàn bộ từ sổ chung…'); }
+  else if(act === 'retry'){ M.failed.forEach(o => { delete o.tries; delete o.err; M.queue.push(o); }); M.failed = []; saveMeta(); render(); sync('retry'); }
+  else if(act === 'invite'){
+    const link = location.origin + location.pathname + '#u=' + encodeURIComponent(M.settings.url) + '&k=' + encodeURIComponent(M.settings.key);
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('Đã sao chép link mời'))
+      .catch(() => openModal(`<h2>Link mời</h2><textarea class="csvbox" id="csvbox" readonly>${esc(link)}</textarea>
+        <div class="btnrow"><button class="btn" type="button" data-act="closemodal">Đóng</button><button class="btn primary" type="button" data-act="copybox">Sao chép</button></div>`));
+  }
+  else if(act === 'copybox'){ const b = $('#csvbox'); b.select(); (navigator.clipboard ? navigator.clipboard.writeText(b.value) : Promise.reject()).then(() => toast('Đã sao chép')).catch(() => { document.execCommand('copy'); toast('Đã sao chép'); }); }
+  else if(act === 'csv'){ if(t) saveFile(`harcassava_${fileSlug(t.name)}_${todayISO()}.csv`, buildCSV(t)); }
+  else if(act === 'backup'){
+    const plots = {}; liveTrials().forEach(x => plots[x.id] = plotsOf(x.id));
+    const trials = {}; liveTrials().forEach(x => trials[x.id] = x);
+    saveFile(`harcassava_saoluu_${todayISO()}.json`, JSON.stringify({ app:'harcassava', version:APP_VERSION, exported:new Date().toISOString(), by:M.user, trials, plots, journal:M.journal }));
+  }
+  else if(act === 'deltrial'){
+    if(t && confirm(`Xoá thí nghiệm “${t.name}” khỏi danh sách của cả nhóm?\nSố liệu đã nhập vẫn nằm trong Google Sheet.`)){
+      const d = normTrial(Object.assign({}, t, { deleted:1 })); M.trials[t.id] = d; M.cur = null; enqueue({ op:'trial', trial:d }); closeModal(); render();
+    }
+  }
+  else if(act === 'wipe'){
+    if(M.queue.length && !confirm(`Còn ${M.queue.length} thao tác chưa gửi lên sổ chung — xoá bây giờ là mất. Vẫn xoá?`)) return;
+    if(confirm('Xoá toàn bộ dữ liệu HARCASSAVA trên máy này?')){
+      Object.keys(M.trials).forEach(id => { try{ localStorage.removeItem(KEY + '_p_' + id); }catch(e){} delete P[id]; bust(id); });
+      const st = M.settings, u = M.user; M = emptyMeta(); M.settings = st; M.user = u; saveMeta(); render(); sync('wipe');
+    }
+  }
+});
+
+function updateRes(kind){ const el = $('#res-' + kind), t = T(); if(el && t) el.innerHTML = (kind === 'y' ? resY : resS)(t, M.draft[kind]); }
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(el.dataset.find){
+    const kind = el.dataset.find;
+    if(!setPlot(kind, el.value.trim())){ el.value = M.draft[kind].plot; return; }
+    renderBody(kind); return;
+  }
+  if(el.dataset.d){
+    const [kind, f] = el.dataset.d.split('.'), d = M.draft[kind];
+    d[f] = el.value; d.touched[f] = true; d.dirty = true; saveMetaSoon(); updateRes(kind);
+  }
+});
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Enter') return;
+  const el = e.target;
+  if(el.dataset && el.dataset.find){ e.preventDefault(); const kind = el.dataset.find; if(normPlot(T(), M.draft[kind].plot)) focusSel(kind === 'y' ? '#y-weight' : '#s-main'); return; }
+  if(el.id === 's-main' && M.draft.s.smode === 'est'){ e.preventDefault(); focusSel('#s-water'); return; }
+  if(el.dataset && el.dataset.d){ e.preventDefault(); (el.dataset.d[0] === 'y' ? saveY : saveS)(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if(el.id === 'importfile' && el.files[0]){
+    const fr = new FileReader();
+    fr.onload = () => { try{ const n = restoreBackup(JSON.parse(fr.result)); render(); toast(`Khôi phục xong: ${n} ô được bổ sung`); }catch(err){ toast('File sao lưu không hợp lệ'); } };
+    fr.readAsText(el.files[0]);
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target; e.preventDefault();
+  if(f.id === 'uform'){
+    const name = fv(f,'name').value.trim(); if(!name) return;
+    M.user = name; saveMeta(); closeModal(); render();
+    if(!T()) openTrialsModal();
+    return;
+  }
+  if(f.id === 'tform'){ submitTrial(f); return; }
+  if(f.id === 'setform'){
+    const url = fv(f,'url').value.trim(), key = fv(f,'key').value.trim();
+    if(url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) return toast('Địa chỉ phải có dạng https://script.google.com/macros/s/…/exec');
+    if(url !== M.settings.url || key !== M.settings.key) M.lastSync = 0;
+    M.settings = { url, key }; saveMeta(); render(); toast(url ? 'Đang kết nối…' : 'Đã tắt sổ chung'); sync('settings');
+  }
+});
+
+/* ================= khởi động ================= */
+const offlineReady = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+if('serviceWorker' in navigator && /^https:|^http:\/\/(localhost|127\.)/.test(location.href)){
+  navigator.serviceWorker.register('sw.js').catch(() => {});      // thiếu file sw.js thì app vẫn chạy, chỉ là không mở được khi mất mạng
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if(tab === 'set') safeRender(); });
+}
+(function joinFromLink(){
+  const m = location.hash.match(/[#&]u=([^&]+)&k=([^&]*)/); if(!m) return;
+  let u, k; try{ u = decodeURIComponent(m[1]); k = decodeURIComponent(m[2]); }catch(e){ return; }
+  if(/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u) && (u !== M.settings.url || k !== M.settings.key)){
+    if(!M.settings.url || confirm('Link này nối sang một sổ chung khác. Đổi sổ chung?')){ M.settings = { url:u, key:k }; M.lastSync = 0; saveMeta(); }
+  }
+  try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+})();
+window.addEventListener('online', () => sync('online'));
+document.addEventListener('visibilitychange', () => { if(!document.hidden) sync('visible'); });
+window.addEventListener('pagehide', () => { if(metaTimer) saveMeta(); });   // chỉ ghi nốt phần đang gõ dở
+setInterval(() => { if(!document.hidden) sync('timer'); }, 20000);
+render();
+if(M.user && !T()) openTrialsModal();
+sync('boot');
+</script>
+</body>
+</html>
