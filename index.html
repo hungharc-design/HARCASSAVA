@@ -113,6 +113,29 @@
   .stake .meta b{font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .stake .meta span{opacity:.8}
 
+  /* cây giống */
+  .stake .meta{flex:1}
+  .stake .pill{flex:0 0 auto; align-self:center; background:var(--leaf); color:var(--leaf-ink); border-radius:10px;
+    padding:5px 10px; font-size:12.5px; font-weight:800; white-space:nowrap; text-align:center; line-height:1.25}
+  .ctx{display:flex; flex-wrap:wrap; gap:4px 18px; font-size:14px; color:var(--ink2); margin:-2px 2px 12px}
+  .ctx b{color:var(--ink); font-variant-numeric:tabular-nums}
+  .switch{display:flex; align-items:center; gap:14px; width:100%; text-align:left; background:var(--paper); color:var(--ink);
+    border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px; min-height:70px}
+  .switch .sw{flex:0 0 auto; width:56px; height:32px; border-radius:999px; background:var(--line); position:relative; transition:background .15s}
+  .switch .sw::after{content:""; position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--paper);
+    box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s}
+  .switch .tx b{display:block; font-size:17px}
+  .switch .tx small{display:block; font-size:13px; color:var(--ink2)}
+  .switch.on{border-color:var(--leaf); background:var(--leaf-soft)}
+  .switch.on .sw{background:var(--leaf)}
+  .switch.on .sw::after{transform:translateX(24px)}
+  .switch.on .tx small{color:var(--leaf); font-weight:600}
+  .dim{opacity:.55}
+  .sd{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--leaf); margin-left:6px; vertical-align:2px}
+  td .todo{color:var(--stem); font-weight:600; font-size:13px}
+  td .todo.blk{display:block; font-size:12px}
+  .seedt th:nth-child(3){width:78px} .seedt th:nth-child(4){width:56px} .seedt th:nth-child(5){width:76px}
+  @media (prefers-reduced-motion: reduce){ .switch .sw, .switch .sw::after{transition:none} }
   .banner{background:var(--stem-soft); color:var(--ink); border:1px solid var(--stem); border-radius:var(--radius);
     padding:9px 12px; font-size:14px; margin-bottom:12px}
   .banner b{color:var(--stem)}
@@ -148,7 +171,7 @@
   .empty b{color:var(--ink)}
 
   /* tổng hợp */
-  .prog{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px}
+  .prog{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:10px}
   .prog div{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:10px 10px 8px}
   .prog b{display:block; font-size:22px; font-variant-numeric:tabular-nums; line-height:1.15}
   .prog i{font-style:normal; font-size:13px; color:var(--ink2); font-weight:400}
@@ -175,7 +198,7 @@
   .plist{display:flex; flex-wrap:wrap; gap:6px}
   .plist button{border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:8px; padding:6px 10px; font-size:15px; font-weight:600; min-width:48px; font-variant-numeric:tabular-nums}
 
-  nav{position:fixed; left:0; right:0; bottom:0; z-index:5; display:grid; grid-template-columns:repeat(4,1fr);
+  nav{position:fixed; left:0; right:0; bottom:0; z-index:5; display:grid; grid-template-columns:repeat(5,1fr);
     background:var(--paper); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom)}
   nav button{border:none; background:transparent; color:var(--ink2); padding:10px 4px 8px; font-size:12px; font-weight:600;
     display:flex; flex-direction:column; align-items:center; gap:3px; min-height:60px}
@@ -230,6 +253,9 @@
   <button data-tab="s" type="button">
     <svg viewBox="0 0 24 24"><path d="M12 3c3.5 4.2 6 7.4 6 10.6A6 6 0 0 1 6 13.6C6 10.4 8.5 7.2 12 3zM9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>Tinh bột
   </button>
+  <button data-tab="g" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 21V11M12 11c-4 0-7-3-7-7 4 0 7 3 7 7zM12 13c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg>Cây giống
+  </button>
   <button data-tab="sum" type="button">
     <svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Tổng hợp
   </button>
@@ -243,7 +269,8 @@
 
 <script>
 /* ================= hằng số, trạng thái ================= */
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
+const SEED_API = 2;             // bản máy chủ tối thiểu nhận được số liệu cây giống
 const KEY = 'harcassava_v1';
 /* Tinh bột (%) = a × tỷ trọng + b */
 const FORMULAS = [
@@ -253,21 +280,23 @@ const FORMULAS = [
 ];
 const newY = () => ({ plot:'', plants:'', weight:'', sample:'', note:'', touched:{}, dirty:false });
 const newS = () => ({ plot:'', smode:'direct', starch:'', air:'', water:'', formula:'', sample:'', touched:{}, dirty:false, pinned:false });
-const emptyMeta = () => ({ settings:{ url:'', key:'' }, user:'', trials:{}, cur:null, queue:[], failed:[], lastSync:0,
-  draft:{ y:newY(), s:newS() }, ui:{ rank:'starch', by:'plot', formula:'reimann', smode:'direct', last:{} }, journal:[] });
+const newG = () => ({ plot:'', seed:false, bundles:'', touched:{}, dirty:false });
+const freshDrafts = () => ({ y:newY(), s:newS(), g:newG() });
+const emptyMeta = () => ({ settings:{ url:'', key:'' }, user:'', trials:{}, cur:null, queue:[], failed:[], lastSync:0, api:0,
+  draft:freshDrafts(), ui:{ rank:'starch', by:'plot', formula:'reimann', smode:'direct', last:{} }, journal:[] });
 
 let M = loadMeta();
 const P = {};                 // số liệu ô, nạp theo từng thí nghiệm
 const OC = {};                // thứ tự ô đã tính sẵn
 let tab = 'y', syncing = false, syncAgain = false, syncState = { kind:'idle', msg:'' }, syncTimer = null;
-let renderPending = false, rankLimit = 100, metaTimer = null, modalKind = '';
+let renderPending = false, rankLimit = 100, metaTimer = null, modalKind = '', setDirty = false;
 
 function loadMeta(){
   try{
     const raw = localStorage.getItem(KEY);
     if(!raw) return emptyMeta();
     const m = Object.assign(emptyMeta(), JSON.parse(raw));
-    m.draft = { y:Object.assign(newY(), m.draft && m.draft.y), s:Object.assign(newS(), m.draft && m.draft.s) };
+    m.draft = { y:Object.assign(newY(), m.draft && m.draft.y), s:Object.assign(newS(), m.draft && m.draft.s), g:Object.assign(newG(), m.draft && m.draft.g) };
     m.ui = Object.assign(emptyMeta().ui, m.ui); m.ui.last = m.ui.last || {};
     return m;
   }catch(e){ return emptyMeta(); }
@@ -406,7 +435,8 @@ async function sync(reason){
   if(navigator.onLine === false){ setStatus('offline'); return; }
   syncing = true; setStatus('syncing');
   try{
-    const ops = M.queue.slice(0, 40);
+    // Thao tác cây giống chỉ gửi khi biết chắc sổ chung đã chạy Code.gs mới; bản cũ sẽ lặng lẽ bỏ qua và làm mất số.
+    const ops = M.queue.filter(q => !q.need || q.need <= (M.api || 0)).slice(0, 40);
     const res = await api({ key:M.settings.key, action: ops.length ? 'ops' : 'pull', ops, since:M.lastSync, user:M.user });
     if(!res || !res.ok){ setStatus(res && res.error === 'wrong_key' ? 'badkey' : 'error', res && res.error); return; }
     // Bỏ khỏi hàng đợi đúng những thao tác vừa gửi (so theo chính đối tượng, không theo số lượng).
@@ -418,6 +448,7 @@ async function sync(reason){
         if(op.tries >= 3){ M.queue.splice(k, 1); M.failed.push(op); }
       } else M.queue.splice(k, 1);
     });
+    M.api = Number(res.api) || 1;
     const changed = applyPull(res);
     M.lastSync = Math.max(0, (res.now || Date.now()) - 15000);
     saveMeta(); setStatus('ok');
@@ -426,7 +457,7 @@ async function sync(reason){
       safeRender();
       if(M.user && !T() && liveTrials().length && !$('.modal') && !isTyping()) openTrialsModal();
     } else renderHeader();
-    if(M.queue.length && M.queue.some(q => !q.tries)) syncAgain = true;
+    if(M.queue.some(q => !q.tries && (!q.need || q.need <= M.api))) syncAgain = true;
   }catch(e){ setStatus('offline'); }
   finally{
     syncing = false;
@@ -458,10 +489,12 @@ function applyPull(res){
   for(const [t, p, was] of wasP) if(canon(plotsOf(t)[p]) !== was) return true;
   return false;
 }
+const heldOps = () => M.api ? M.queue.filter(q => q.need && q.need > M.api).length : 0;
 function setStatus(kind, msg){ syncState = { kind, msg }; renderStatus(); }
 function renderStatus(){
   const el = $('#status'); if(!el) return;
   const q = M.queue.length, pend = q ? ` · ${q} chờ gửi` : '', bad = M.failed.length ? ` · ${M.failed.length} lỗi gửi` : '';
+  if(syncState.kind === 'ok' && heldOps()){ el.textContent = `Sổ chung cần cập nhật Code.gs · ${heldOps()} số liệu cây giống chờ gửi`; el.dataset.kind = 'error'; return; }
   const local = 'Chưa nối sổ chung — lưu trên máy' + pend;
   const map = {
     local, idle: M.settings.url ? 'Chưa đồng bộ' + pend : local,
@@ -477,13 +510,18 @@ function renderStatus(){
 
 /* ================= vẽ màn hình ================= */
 function isTyping(){ const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
-function safeRender(){ if(isTyping() || $('.modal')){ renderPending = true; renderHeader(); return; } renderPending = false; render(); }
-document.addEventListener('focusout', () => { setTimeout(() => { if(renderPending && !isTyping() && !$('.modal')) safeRender(); }, 250); });
+function safeRender(){ if(isTyping() || $('.modal') || (tab === 'set' && setDirty)){ renderPending = true; renderHeader(); return; } renderPending = false; render(); }
+document.addEventListener('focusout', () => { setTimeout(() => { if(renderPending) safeRender(); }, 250); });
 
 function progress(t){
-  const ps = plotsOf(t.id), o = ord(t); let y = 0, s = 0, e = 0;
-  for(const id of o.ids){ const r = ps[id]; if(!r) continue; if(has(r.weight)) y++; if(has(r.starch)){ s++; if(r.smode === 'est') e++; } }
-  return { n:o.ids.length, y, s, e };
+  const ps = plotsOf(t.id), o = ord(t); let y = 0, s = 0, e = 0, g = 0, gc = 0, gb = 0;
+  for(const id of o.ids){
+    const r = ps[id]; if(!r) continue;
+    if(has(r.weight)) y++;
+    if(has(r.starch)){ s++; if(r.smode === 'est') e++; }
+    if(has(r.seed)){ g++; if(Number(r.bundles) > 0){ gc++; gb += Number(r.bundles); } }
+  }
+  return { n:o.ids.length, y, s, e, g, gc, gb };
 }
 function renderHeader(){
   $('#userchip').textContent = M.user || 'Nhập tên';
@@ -508,9 +546,15 @@ function render(){
 function renderBody(kind){ const b = $('#body-' + kind); if(b) b.innerHTML = bodyEntry(kind); }
 function focusSel(sel){ const el = $(sel); if(el){ el.focus(); if(el.select) el.select(); } }
 
-/* ---- nhập liệu: tìm ô ---- */
+/* ---- nhập liệu: ba tab cùng một khung (tìm ô → thẻ ô → form → Lưu) ---- */
+const KIND = {
+  y:{ make:newY, form:(t,d,id) => formY(t,d,id), save:v => saveY(v), focus:'#y-weight', hint:'Nhập số ô để cân năng suất.' },
+  s:{ make:newS, form:(t,d,id) => formS(t,d,id), save:v => saveS(v), focus:'#s-main',   hint:'Nhập số ô để ghi hàm lượng tinh bột.' },
+  g:{ make:newG, form:(t,d,id) => formG(t,d,id), save:v => saveG(v), focus:null,        hint:'Nhập số ô để ghi thu cây giống.' }
+};
 function fillDraft(kind, d, t, id){
   const r = plotsOf(t.id)[id] || {};
+  if(kind === 'g'){ d.seed = has(r.seed); d.bundles = has(r.bundles) ? String(r.bundles) : ''; d.touched = {}; d.dirty = false; return; }
   if(kind === 'y'){
     d.plants = has(r.plants) ? String(r.plants) : String(t.nharvest);
     d.weight = has(r.weight) ? dec(r.weight) : '';
@@ -531,10 +575,10 @@ function setPlot(kind, raw){
   const curId = d.plot ? normPlot(t, d.plot) : null, newId = raw ? normPlot(t, raw) : null;
   if(curId && d.dirty && newId !== curId){
     if(confirm(`Ô ${curId} chưa lưu.\n\nOK = lưu rồi chuyển ô\nHuỷ = bỏ số vừa nhập`)){
-      if(!(kind === 'y' ? saveY : saveS)(true)) return false;
+      if(!KIND[kind].save(true)) return false;
     }
   }
-  const nd = kind === 'y' ? newY() : newS();
+  const nd = KIND[kind].make();
   nd.plot = raw;
   if(newId) fillDraft(kind, nd, t, newId);
   M.draft[kind] = nd; saveMeta();
@@ -557,13 +601,14 @@ function viewEntry(kind){
 function bodyEntry(kind){
   const t = T(), d = M.draft[kind];
   const id = d.plot ? normPlot(t, d.plot) : null;
-  if(id) return (kind === 'y' ? formY : formS)(t, d, id);
+  if(id) return KIND[kind].form(t, d, id);
   return (d.plot ? noMatch(t, d.plot, kind) : lastSaved(t, kind)) + recent(t, kind);
 }
 function stake(t, id){
   const r = plotsOf(t.id)[id] || {}, rep = repOf(t, id);
   return `<div class="stake"><div class="no">${esc(id)}</div><div class="meta">
-    ${r.line ? `<b>${esc(r.line)}</b>` : ''}${rep !== '' ? `<span>Lần lặp ${esc(rep)}</span>` : ''}${!r.line && rep === '' ? `<span>${esc(t.name)}</span>` : ''}</div></div>`;
+    ${r.line ? `<b>${esc(r.line)}</b>` : ''}${rep !== '' ? `<span>Lần lặp ${esc(rep)}</span>` : ''}${!r.line && rep === '' ? `<span>${esc(t.name)}</span>` : ''}</div>
+    ${has(r.seed) ? `<span class="pill">Thu giống${has(r.bundles) ? `<br>${esc(r.bundles)} bó` : ''}</span>` : ''}</div>`;
 }
 function noMatch(t, raw, kind){
   const o = ord(t), ps = plotsOf(t.id), q = raw.toLowerCase();
@@ -574,7 +619,7 @@ function noMatch(t, raw, kind){
 }
 function lastSaved(t, kind){
   const l = M.ui.last[kind];
-  if(!l || l.tr !== t.id) return `<div class="empty"><b>${kind === 'y' ? 'Nhập số ô để cân năng suất.' : 'Nhập số ô để ghi hàm lượng tinh bột.'}</b><br>Gõ số ghi trên cọc, hoặc bấm ‹ › để đi lần lượt.</div>`;
+  if(!l || l.tr !== t.id) return `<div class="empty"><b>${KIND[kind].hint}</b><br>Gõ số ghi trên cọc, hoặc bấm ‹ › để đi lần lượt.</div>`;
   const o = ord(t), i = o.pos[l.p], next = i !== undefined ? o.ids[i + 1] : undefined;
   return `<div class="done"><div class="t">✓ Đã lưu ô ${esc(l.p)}</div><div class="s">${esc(l.txt)}</div>
     ${next !== undefined ? `<div class="btnrow"><button class="btn primary" type="button" data-goto="${esc(next)}" data-kind="${kind}">Ô kế tiếp: ${esc(next)} ›</button></div>` : ''}</div>`;
@@ -713,16 +758,51 @@ function saveS(viaSwitch){
   return true;
 }
 
-function commitPlot(t, id, fields, kind, txt){
+/* ---- tab Cây giống ---- */
+function formG(t, d, id){
+  const r = plotsOf(t.id)[id] || {}, adj = adjW(t, r), st = starchOf(r);
+  return `${stake(t, id)}
+    ${adj !== null || st !== null ? `<div class="ctx">${adj !== null ? `<span>Khối lượng ô <b>${nf(adj,1)} kg</b></span>` : ''}${st !== null ? `<span>Tinh bột <b>${nf(st,1)} %</b>${r.smode === 'est' ? ' ước tính' : ''}</span>` : ''}</div>` : ''}
+    ${has(r.seed) ? `<div class="banner"><b>Ô này đã ghi thu giống:</b> ${has(r.bundles) ? esc(r.bundles) + ' bó' : 'đã chọn, chưa thu'}${r.gby ? ' — ' + esc(r.gby) : ''}${has(r.gat) ? ', ' + fmtDT(r.gat) : ''}.</div>` : ''}
+    <button class="switch ${d.seed ? 'on' : ''}" type="button" role="switch" aria-checked="${d.seed ? 'true' : 'false'}" data-seed="1">
+      <span class="sw"></span><span class="tx"><b>Thu cây giống ô này</b><small>${d.seed ? 'Đã chọn để trồng tiếp vụ sau' : 'Chưa chọn'}</small></span></button>
+    <div class="f ${d.seed ? '' : 'dim'}" id="g-field"><span>Số bó giống đã thu</span>
+      <div class="stepper">
+        <button type="button" data-bundles="-1" aria-label="Bớt một bó">−</button>
+        <input id="g-bundles" data-d="g.bundles" inputmode="numeric" placeholder="chưa thu" value="${esc(d.bundles)}" autocomplete="off" enterkeyhint="done">
+        <button type="button" data-bundles="1" aria-label="Thêm một bó">+</button>
+      </div>
+      <small>Chọn trước, thu sau cũng được: để trống số bó, khi bó xong thì mở lại ô và điền.</small></div>
+    <div class="savepad"></div>
+    <div class="savebar"><button class="btn primary" data-act="save-g" type="button">Lưu cây giống ô ${esc(id)}</button></div>`;
+}
+function saveG(viaSwitch){
+  const t = T(), d = M.draft.g, id = t && normPlot(t, d.plot); if(!id) return false;
+  const r = plotsOf(t.id)[id] || {};
+  const n = d.bundles === '' ? null : num(d.bundles);
+  if(d.bundles !== '' && (n === null || n < 0 || n % 1)){ toast('Số bó giống chưa đúng'); focusSel('#g-bundles'); return false; }
+  const sel = d.seed || (n !== null && n > 0);
+  if(!sel && !has(r.seed)){                      // không có gì để ghi
+    if(!viaSwitch) toast('Bật “Thu cây giống ô này” hoặc nhập số bó trước khi lưu');
+    return !!viaSwitch;
+  }
+  if(n !== null && n > 30 && !confirm(`Ô ${id}: ${n} bó giống.\nCon số này có đúng không?`)) return false;
+  const fields = sel ? { seed:1, bundles: n === null ? '' : n, gby:M.user, gat:Date.now() } : { seed:'', bundles:'', gby:'', gat:'' };
+  commitPlot(t, id, fields, 'g', sel ? (n ? `${n} bó giống` : 'đã chọn, chưa thu') : 'bỏ chọn thu giống', SEED_API);
+  if(!viaSwitch) afterSave('g', id);
+  return true;
+}
+
+function commitPlot(t, id, fields, kind, txt, need){
   const ps = plotsOf(t.id);
   ps[id] = applyFields(ps[id], fields);
   savePlots(t.id);
   M.journal.unshift({ t:Date.now(), tr:t.id, p:id, k:kind, txt }); if(M.journal.length > 300) M.journal.length = 300;
   M.ui.last[kind] = { tr:t.id, p:id, txt };
-  enqueue({ op:'plot', trial:t.id, plot:id, fields });
+  enqueue(need ? { op:'plot', trial:t.id, plot:id, fields, need } : { op:'plot', trial:t.id, plot:id, fields });
 }
 function afterSave(kind, id){
-  M.draft[kind] = kind === 'y' ? newY() : newS(); saveMeta();
+  M.draft[kind] = KIND[kind].make(); saveMeta();
   render(); window.scrollTo(0, 0);
   toast(`Đã lưu ô ${id}`);
   focusSel('#find-' + kind);
@@ -738,7 +818,7 @@ function gotoPlot(kind, id){
   if(tab !== kind) tab = kind;
   if(!setPlot(kind, id)) return;
   render(); window.scrollTo(0, 0);
-  focusSel(kind === 'y' ? '#y-weight' : '#s-main');
+  if(KIND[kind].focus) focusSel(KIND[kind].focus); else if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
 }
 function stepPlot(kind, dir){
   const t = T(); if(!t) return;
@@ -755,7 +835,7 @@ function summaryRows(t){
   const ps = plotsOf(t.id), o = ord(t);
   return o.ids.map(id => {
     const r = ps[id] || {}, adj = adjW(t, r), st = starchOf(r);
-    return { id, line:r.line || '', rep:repOf(t, id), adj, st, est:r.smode === 'est',
+    return { id, line:r.line || '', rep:repOf(t, id), adj, st, est:r.smode === 'est', seed:has(r.seed), bundles: has(r.bundles) ? Number(r.bundles) : null,
       short: has(r.weight) && has(r.plants) && Number(r.plants) !== t.nharvest, prod: adj !== null && st !== null ? adj * st / 100 : null };
   });
 }
@@ -764,7 +844,9 @@ function byLine(rows){
   for(const r of rows){ if(!r.line) continue; if(!g.has(r.line)) g.set(r.line, []); g.get(r.line).push(r); }
   return [...g.entries()].map(([line, rs]) => ({ id:line, line:'', n:rs.length, plots:rs.map(r => r.id),
     st: mean(rs.filter(r => r.st !== null).map(r => r.st)), adj: mean(rs.filter(r => r.adj !== null).map(r => r.adj)),
-    prod: mean(rs.filter(r => r.prod !== null).map(r => r.prod)), est: rs.some(r => r.est), short: rs.some(r => r.short) }));
+    prod: mean(rs.filter(r => r.prod !== null).map(r => r.prod)), est: rs.some(r => r.est), short: rs.some(r => r.short),
+    seed: rs.some(r => r.seed), seedPlots: rs.filter(r => r.seed).map(r => r.id), seedTodo: rs.filter(r => r.seed && !r.bundles).length,
+    bundles: rs.some(r => r.seed && r.bundles) ? rs.reduce((a, r) => a + (r.seed && r.bundles ? r.bundles : 0), 0) : null }));
 }
 function pearson(rows){
   const v = rows.filter(r => r.st !== null && r.adj !== null), n = v.length; if(n < 5) return { n, r:null };
@@ -775,43 +857,59 @@ function pearson(rows){
 }
 function viewSummary(t){
   const all = summaryRows(t), p = progress(t), o = ord(t);
-  const byL = o.lines && M.ui.by === 'line';
-  const key = { starch:'st', adj:'adj', prod:'prod' }[M.ui.rank] || 'st';
-  const rows = (byL ? byLine(all) : all).filter(r => r[key] !== null).sort((a,b) => b[key] - a[key]);
+  const byL = o.lines && M.ui.by === 'line', mode = M.ui.rank, seedMode = mode === 'seed';
+  const key = { starch:'st', adj:'adj', prod:'prod' }[mode] || 'st';
+  const base = byL ? byLine(all) : all;
+  // Cây giống là danh sách theo thứ tự ô (để đi thu), ba mục còn lại là bảng xếp hạng
+  const rows = seedMode ? base.filter(r => r.seed) : base.filter(r => r[key] !== null).sort((a,b) => b[key] - a[key]);
   const cor = pearson(all), shown = rows.slice(0, rankLimit);
-  const chips = [['starch','Hàm lượng tinh bột'],['adj','Khối lượng ô'],['prod','Tinh bột × Khối lượng']]
-    .map(([k,l]) => `<button class="chip ${M.ui.rank === k ? 'on' : ''}" type="button" data-rank="${k}">${l}</button>`).join('');
-  const td = (k, html) => `<td class="${key === k ? 'k' : ''}">${html}</td>`;
+  const chips = [['starch','Hàm lượng tinh bột'],['adj','Khối lượng ô'],['prod','Tinh bột × Khối lượng'],['seed','Cây giống']]
+    .map(([k,l]) => `<button class="chip ${mode === k ? 'on' : ''}" type="button" data-rank="${k}">${l}</button>`).join('');
+  const td = (k, html) => `<td class="${!seedMode && key === k ? 'k' : ''}">${html}</td>`;
+  const th = (k, html) => `<th class="${!seedMode && key === k ? 'k' : ''}">${html}</th>`;
+  const name = r => `<b>${esc(r.id)}</b>${!seedMode && r.seed ? '<i class="sd"></i>' : ''}` + (byL
+    ? `<span class="ln">${seedMode ? `${r.seedPlots.length} ô: ${esc(r.seedPlots.join(', '))}` : `${r.n} ô: ${esc(r.plots.join(', '))}`}</span>`
+    : (r.line ? `<span class="ln">${esc(r.line)}${r.rep !== '' ? ' · L' + esc(r.rep) : ''}</span>` : (r.rep !== '' ? `<span class="ln">Lặp ${esc(r.rep)}</span>` : '')));
+  const stCell = r => r.st === null ? '—' : nf(r.st,1) + (r.est ? '<span class="est">ƯT</span>' : '');
+  const adjCell = r => r.adj === null ? '—' : nf(r.adj,1) + (r.short ? '*' : '');
+  const bunCell = r => { const todo = byL ? r.seedTodo : (r.bundles ? 0 : 1);
+    return (r.bundles ? `<b>${nf(r.bundles,0)}</b>` : '') + (todo ? `<span class="todo${r.bundles ? ' blk' : ''}">${r.bundles ? `còn ${todo} ô` : 'chưa thu'}</span>` : ''); };
+  const goKind = seedMode ? 'g' : 'y';
+  const table = !rows.length ? '' : `<div class="tablewrap"><table class="${seedMode ? 'seedt' : ''}">
+      <tr><th>#</th><th>${byL ? 'Dòng' : 'Ô'}</th>${seedMode ? `<th class="k">Số bó<br>giống</th><th>KL ô<br>kg</th><th>Tinh bột<br>%</th>`
+        : th('st','Tinh bột<br>%') + th('adj','KL ô<br>kg') + th('prod','TB × KL<br>kg')}</tr>
+      ${shown.map((r,i) => `<tr ${byL ? '' : `data-goto="${esc(r.id)}" data-kind="${goKind}"`}>
+        <td>${i + 1}</td><td>${name(r)}</td>
+        ${seedMode ? `<td class="k">${bunCell(r)}</td><td>${adjCell(r)}</td><td>${stCell(r)}</td>`
+          : td('st', stCell(r)) + td('adj', adjCell(r)) + td('prod', r.prod === null ? '—' : nf(r.prod,2))}</tr>`).join('')}
+    </table></div>
+    ${rows.length > shown.length ? `<div class="btnrow"><button class="btn sm" type="button" data-act="more">Xem thêm ${Math.min(100, rows.length - shown.length)} / còn ${nf(rows.length - shown.length,0)}</button></div>` : ''}`;
   return `
     <h2>Tổng hợp</h2>
     <div class="prog">
       <div><b>${nf(p.y,0)}<i>/${nf(p.n,0)}</i></b><span>ô đã cân</span></div>
-      <div><b>${nf(p.s,0)}<i>/${nf(p.n,0)}</i></b><span>ô có tinh bột</span></div>
-      <div><b>${nf(p.e,0)}</b><span>ô ước tính</span></div>
+      <div><b>${nf(p.s,0)}<i>/${nf(p.n,0)}</i></b><span>ô có tinh bột · ${nf(p.e,0)} ước tính</span></div>
+      <div><b>${nf(p.g,0)}</b><span>ô chọn thu giống · ${nf(p.gc,0)} đã thu</span></div>
+      <div><b>${nf(p.gb,0)}</b><span>bó giống đã thu</span></div>
     </div>
     <div class="btnrow" style="margin-top:0">
       <button class="btn sm" type="button" data-act="missing-y">Ô chưa cân (${nf(p.n - p.y,0)})</button>
       <button class="btn sm" type="button" data-act="missing-s">Ô chưa có tinh bột (${nf(p.n - p.s,0)})</button>
     </div>
-    <h3>Xếp hạng từ cao xuống thấp theo</h3>
+    <h3>Xem bảng theo</h3>
     <div class="chips">${chips}</div>
     ${o.lines ? `<div class="chips">
       <button class="chip ${!byL ? 'on' : ''}" type="button" data-by="plot">Từng ô</button>
-      <button class="chip ${byL ? 'on' : ''}" type="button" data-by="line">Từng dòng · trung bình các lặp</button></div>` : ''}
-    ${cor.r !== null ? `<p class="muted small">Tương quan giữa tinh bột và khối lượng ô: <b style="color:var(--ink)">r = ${nf(cor.r,2)}</b> (${nf(cor.n,0)} ô có đủ hai số).</p>` : ''}
-    ${rows.length ? `<div class="tablewrap"><table>
-      <tr><th>#</th><th>${byL ? 'Dòng' : 'Ô'}</th><th class="${key === 'st' ? 'k' : ''}">Tinh bột<br>%</th><th class="${key === 'adj' ? 'k' : ''}">KL ô<br>kg</th><th class="${key === 'prod' ? 'k' : ''}">TB × KL<br>kg</th></tr>
-      ${shown.map((r,i) => `<tr ${byL ? '' : `data-goto="${esc(r.id)}" data-kind="y"`}>
-        <td>${i + 1}</td>
-        <td><b>${esc(r.id)}</b>${byL ? `<span class="ln">${r.n} ô: ${esc(r.plots.join(', '))}</span>` : (r.line ? `<span class="ln">${esc(r.line)}${r.rep !== '' ? ' · L' + esc(r.rep) : ''}</span>` : (r.rep !== '' ? `<span class="ln">Lặp ${esc(r.rep)}</span>` : ''))}</td>
-        ${td('st', r.st === null ? '—' : nf(r.st,1) + (r.est ? '<span class="est">ƯT</span>' : ''))}
-        ${td('adj', r.adj === null ? '—' : nf(r.adj,1) + (r.short ? '*' : ''))}
-        ${td('prod', r.prod === null ? '—' : nf(r.prod,2))}</tr>`).join('')}
-    </table></div>
-    ${rows.length > shown.length ? `<div class="btnrow"><button class="btn sm" type="button" data-act="more">Xem thêm ${Math.min(100, rows.length - shown.length)} / còn ${nf(rows.length - shown.length,0)}</button></div>` : ''}
-    <p class="muted small" style="margin-top:10px"><span class="est" style="margin-left:0">ƯT</span> tinh bột ước tính từ cân khô, cân ướt.
-      <b>*</b> ô thiếu cây: khối lượng đã quy đổi về ${esc(t.nharvest)} cây. Cột “TB × KL” là số kg tinh bột của ô (khối lượng ô × % tinh bột).</p>`
-    : `<div class="empty"><b>Chưa có số liệu để xếp hạng.</b><br>Bảng sẽ hiện khi có ô được ${key === 'st' ? 'ghi tinh bột' : key === 'adj' ? 'cân năng suất' : 'cân đủ cả năng suất và tinh bột'}.</div>`}`;
+      <button class="chip ${byL ? 'on' : ''}" type="button" data-by="line">Từng dòng · ${seedMode ? 'cộng các lặp' : 'trung bình các lặp'}</button></div>` : ''}
+    ${seedMode
+      ? `<p class="muted small">${rows.length ? `Xếp theo thứ tự ô. <b style="color:var(--ink)">${nf(p.g,0)} ô</b> được chọn, đã thu <b style="color:var(--ink)">${nf(p.gc,0)} ô</b>, tổng <b style="color:var(--ink)">${nf(p.gb,0)} bó</b>.` : ''}</p>`
+      : `<p class="muted small">Xếp từ cao xuống thấp.${cor.r !== null ? ` Tương quan giữa tinh bột và khối lượng ô: <b style="color:var(--ink)">r = ${nf(cor.r,2)}</b> (${nf(cor.n,0)} ô có đủ hai số).` : ''}</p>`}
+    ${table}
+    ${!rows.length ? `<div class="empty">${seedMode
+        ? `<b>Chưa có ô nào được chọn thu giống.</b><br>Vào tab Cây giống, gõ số ô rồi bật “Thu cây giống ô này”.`
+        : `<b>Chưa có số liệu để xếp hạng.</b><br>Bảng sẽ hiện khi có ô được ${key === 'st' ? 'ghi tinh bột' : key === 'adj' ? 'cân năng suất' : 'cân đủ cả năng suất và tinh bột'}.`}</div>`
+      : `<p class="muted small" style="margin-top:10px">${seedMode ? '' : '<i class="sd" style="margin-left:0"></i> ô đã chọn thu giống. '}<span class="est" style="margin-left:0">ƯT</span> tinh bột ước tính từ cân khô, cân ướt.
+      <b>*</b> ô thiếu cây: khối lượng đã quy đổi về ${esc(t.nharvest)} cây.${seedMode ? '' : ' Cột “TB × KL” là số kg tinh bột của ô (khối lượng ô × % tinh bột).'}</p>`}`;
 }
 function openMissing(kind){
   const t = T(), ps = plotsOf(t.id), o = ord(t), f = kind === 'y' ? 'weight' : 'starch';
@@ -851,6 +949,7 @@ function viewSettings(){
     ${connected ? `<div class="btnrow"><button class="btn sm" type="button" data-act="invite">Sao chép link mời cho người trong nhóm</button></div>
       <p class="muted small" style="margin-top:8px">Người nhận mở link là máy tự nối sổ chung, không phải gõ địa chỉ và mã nhóm. Mỗi lần bấm Lưu ô, số liệu được gửi ngay lên Google Sheet; số của máy khác về sau khoảng 20 giây. Mất mạng vẫn nhập bình thường.</p>`
     : `<p class="muted small" style="margin-top:8px">Chưa nối sổ chung: số liệu chỉ nằm trên máy này và người khác không thấy thí nghiệm bạn tạo. Xem file hướng dẫn để tạo Google Sheet dùng chung.</p>`}
+    ${heldOps() ? `<div class="banner" style="margin-top:12px"><b>Sổ chung đang chạy Code.gs bản cũ.</b> ${heldOps()} số liệu cây giống đang giữ trên máy này và sẽ tự gửi sau khi bạn dán Code.gs mới rồi triển khai phiên bản mới (xem file hướng dẫn, mục Nâng cấp). Năng suất và tinh bột vẫn gửi bình thường.</div>` : ''}
     ${M.failed.length ? `<div class="banner" style="margin-top:12px"><b>${M.failed.length} thao tác gửi lỗi</b> (${esc(M.failed[0].err || '')}). Số liệu vẫn còn trên máy này.
       <div class="btnrow"><button class="btn sm" type="button" data-act="retry">Gửi lại</button></div></div>` : ''}
 
@@ -870,6 +969,7 @@ function viewSettings(){
       <div><span>Ứng dụng</span><b>HARCASSAVA ${APP_VERSION}</b></div>
       <div><span>Mở được khi mất mạng</span><b>${offlineReady() ? 'Có' : 'Chưa'}</b></div>
       <div><span>Chờ gửi lên sổ chung</span><b>${M.queue.length}</b></div>
+      <div><span>Bản máy chủ (Code.gs)</span><b>${M.api ? (M.api >= SEED_API ? 'mới, nhận được cây giống' : 'cũ, cần cập nhật') : '—'}</b></div>
       <div><span>Lần đồng bộ gần nhất</span><b>${M.lastSync ? fmtDT(M.lastSync + 15000) : '—'}</b></div>
     </div>
     <div class="btnrow" style="margin-top:20px"><button class="btn danger" type="button" data-act="wipe">Xoá dữ liệu trên máy này</button></div>
@@ -881,7 +981,7 @@ function buildCSV(t){
   const ps = plotsOf(t.id), o = ord(t);
   const head = ['trial','year','location','plot','rep','line','plants_planned','plants_harvested','root_weight_kg','starch_sample_kg',
     'plot_weight_kg','plot_weight_adj_kg','starch_pct','starch_method','weight_air','weight_water','specific_gravity','formula',
-    'starch_yield_kg','note','yield_by','yield_time','starch_by','starch_time'];
+    'starch_yield_kg','note','yield_by','yield_time','starch_by','starch_time','seed_selected','seed_bundles','seed_by','seed_time'];
   const q = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
   const r4 = v => v === null || v === undefined ? '' : Math.round(v * 10000) / 10000;
   const lines = [head.join(',')];
@@ -892,7 +992,8 @@ function buildCSV(t){
       has(r.weight) ? (has(r.plants) ? r.plants : t.nharvest) : '', has(r.weight) ? r.weight : '', has(r.sample) ? r.sample : '',
       r4(tw), r4(adj), st === null ? '' : st, r.smode === 'est' ? 'estimated' : (st === null ? '' : 'direct'),
       has(r.air) ? r.air : '', has(r.water) ? r.water : '', r4(sg), r.formula || '',
-      adj !== null && st !== null ? r4(adj * st / 100) : '', r.note || '', r.yby || '', isoLocal(r.yat), r.sby || '', isoLocal(r.sat)].map(q).join(','));
+      adj !== null && st !== null ? r4(adj * st / 100) : '', r.note || '', r.yby || '', isoLocal(r.yat), r.sby || '', isoLocal(r.sat),
+      has(r.seed) ? 1 : 0, has(r.bundles) ? r.bundles : '', r.gby || '', isoLocal(r.gat)].map(q).join(','));
   }
   return '﻿' + lines.join('\r\n');
 }
@@ -924,6 +1025,10 @@ function restoreBackup(obj){
       if(has(a.weight) && (!has(b.weight) || Number(a.yat || 0) > Number(b.yat || 0))) ['plants','weight','sample','note','yby','yat'].forEach(k => { if(has(a[k])) fields[k] = a[k]; });
       if(has(a.starch) && (!has(b.starch) || Number(a.sat || 0) > Number(b.sat || 0))) ['smode','starch','air','water','formula','sby','sat'].forEach(k => { if(has(a[k])) fields[k] = a[k]; });
       if(Object.keys(fields).length){ ps[id] = applyFields(b, fields); enqueue({ op:'plot', trial:t.id, plot:id, fields }); n++; }
+      if(has(a.seed) && (!has(b.seed) || Number(a.gat || 0) > Number(b.gat || 0))){
+        const gf = {}; ['seed','bundles','gby','gat'].forEach(k => { if(has(a[k])) gf[k] = a[k]; });
+        ps[id] = applyFields(ps[id], gf); enqueue({ op:'plot', trial:t.id, plot:id, fields:gf, need:SEED_API }); if(!Object.keys(fields).length) n++;
+      }
     }
     if(lay.length && !ord(t).layout){ const rows = lay.sort((x,y) => x[3] - y[3]).map(r => r.slice(0,3)); applyLayoutLocal(t.id, rows); enqueue({ op:'layout', trial:t.id, rows }); }
     bust(t.id); savePlots(t.id);
@@ -1003,14 +1108,14 @@ function submitTrial(f){
   M.trials[t.id] = t; bust(t.id);
   enqueue({ op:'trial', trial:t });
   if(rows){ applyLayoutLocal(t.id, rows); savePlots(t.id); enqueue({ op:'layout', trial:t.id, rows }); }
-  if(M.cur !== t.id){ M.cur = t.id; M.draft = { y:newY(), s:newS() }; rankLimit = 100; }
+  if(M.cur !== t.id){ M.cur = t.id; M.draft = freshDrafts(); rankLimit = 100; }
   saveMeta(); closeModal(); render();
   toast(old ? 'Đã lưu thí nghiệm' : `Đã tạo ${t.name} — ${nf(nplots,0)} ô`);
 }
 function pickTrial(id){
   if(M.cur !== id){
-    const d = M.draft; if((d.y.dirty || d.s.dirty) && !confirm('Còn số chưa lưu ở thí nghiệm đang mở. Vẫn đổi thí nghiệm?')) return;
-    M.cur = id; M.draft = { y:newY(), s:newS() }; rankLimit = 100; saveMeta();
+    const d = M.draft; if((d.y.dirty || d.s.dirty || d.g.dirty) && !confirm('Còn số chưa lưu ở thí nghiệm đang mở. Vẫn đổi thí nghiệm?')) return;
+    M.cur = id; M.draft = freshDrafts(); rankLimit = 100; saveMeta();
   }
   closeModal(); render(); window.scrollTo(0, 0);
 }
@@ -1018,13 +1123,13 @@ function pickTrial(id){
 /* ================= sự kiện ================= */
 $('#nav').addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if(!b) return;
-  tab = b.dataset.tab; render(); window.scrollTo(0, 0);
+  tab = b.dataset.tab; setDirty = false; render(); window.scrollTo(0, 0);
 });
 $('#userchip').addEventListener('click', () => openUserModal(false));
 $('#trialbar').addEventListener('click', openTrialsModal);
 
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-step],[data-goto],[data-plants],[data-smode],[data-formula],[data-rank],[data-by],[data-pick],[data-preset],[data-act]');
+  const el = e.target.closest('[data-step],[data-goto],[data-plants],[data-seed],[data-bundles],[data-smode],[data-formula],[data-rank],[data-by],[data-pick],[data-preset],[data-act]');
   if(!el) return;
   const ds = el.dataset;
   if(ds.step){ stepPlot(ds.kind, +ds.step); return; }
@@ -1034,6 +1139,8 @@ document.addEventListener('click', e => {
     d.plants = String(Math.max(0, cur + (+ds.plants))); d.touched.plants = true; d.dirty = true; saveMeta();
     const i = $('[data-d="y.plants"]'); if(i) i.value = d.plants; updateRes('y'); return;
   }
+  if(ds.seed){ const d = M.draft.g; d.seed = !d.seed; if(!d.seed) d.bundles = ''; d.dirty = true; saveMeta(); renderBody('g'); return; }
+  if(ds.bundles){ const d = M.draft.g; d.bundles = String(Math.max(0, (num(d.bundles) || 0) + (+ds.bundles))); if(+d.bundles > 0) d.seed = true; d.touched.bundles = true; d.dirty = true; saveMeta(); renderBody('g'); return; }
   if(ds.smode){ const d = M.draft.s; d.smode = ds.smode; d.pinned = true; saveMeta(); renderBody('s'); focusSel('#s-main'); return; }
   if(ds.formula){ const d = M.draft.s; d.formula = ds.formula; d.pinned = true; saveMeta(); renderBody('s'); return; }
   if(ds.rank){ M.ui.rank = ds.rank; rankLimit = 100; saveMeta(); render(); return; }
@@ -1045,6 +1152,7 @@ document.addEventListener('click', e => {
   if(act === 'closemodal') closeModal();
   else if(act === 'save-y') saveY();
   else if(act === 'save-s') saveS();
+  else if(act === 'save-g') saveG();
   else if(act === 'clear-y') clearData('y');
   else if(act === 'clear-s') clearData('s');
   else if(act === 'more'){ rankLimit += 100; render(); }
@@ -1085,6 +1193,12 @@ document.addEventListener('click', e => {
 });
 
 function updateRes(kind){ const el = $('#res-' + kind), t = T(); if(el && t) el.innerHTML = (kind === 'y' ? resY : resS)(t, M.draft[kind]); }
+function paintSwitch(){
+  const b = $('.switch'), d = M.draft.g; if(!b) return;
+  b.classList.toggle('on', d.seed); b.setAttribute('aria-checked', d.seed ? 'true' : 'false');
+  b.querySelector('small').textContent = d.seed ? 'Đã chọn để trồng tiếp vụ sau' : 'Chưa chọn';
+  const f = $('#g-field'); if(f) f.classList.toggle('dim', !d.seed);
+}
 document.addEventListener('input', e => {
   const el = e.target;
   if(el.dataset.find){
@@ -1094,15 +1208,29 @@ document.addEventListener('input', e => {
   }
   if(el.dataset.d){
     const [kind, f] = el.dataset.d.split('.'), d = M.draft[kind];
-    d[f] = el.value; d.touched[f] = true; d.dirty = true; saveMetaSoon(); updateRes(kind);
+    d[f] = el.value; d.touched[f] = true; d.dirty = true;
+    if(kind === 'g'){ if(!d.seed && (num(d.bundles) || 0) > 0){ d.seed = true; paintSwitch(); } }
+    else updateRes(kind);
+    saveMetaSoon(); return;
   }
+  if(el.form && el.form.id === 'setform') setDirty = true;
 });
+/* Chạm vào ô số đã có sẵn số (ô đã cân, ô máy khác vừa ghi) thì bôi chọn cả số, gõ là thay luôn — không bị gõ nối vào số cũ. */
+let selectOnUp = null;
+document.addEventListener('focusin', e => {
+  const el = e.target;
+  if(el.tagName !== 'INPUT' || !el.value || !(el.dataset.find || (el.dataset.d && /numeric|decimal/.test(el.getAttribute('inputmode') || '')))) return;
+  selectOnUp = el;      // chạm bằng tay/chuột: bôi chọn ở mouseup, sau khi trình duyệt đặt xong con trỏ
+  el.select();          // vào ô bằng phím hoặc do app đưa con trỏ tới
+});
+document.addEventListener('mouseup', e => { if(selectOnUp && e.target === selectOnUp){ e.preventDefault(); selectOnUp.select(); } selectOnUp = null; });
+
 document.addEventListener('keydown', e => {
   if(e.key !== 'Enter') return;
   const el = e.target;
-  if(el.dataset && el.dataset.find){ e.preventDefault(); const kind = el.dataset.find; if(normPlot(T(), M.draft[kind].plot)) focusSel(kind === 'y' ? '#y-weight' : '#s-main'); return; }
+  if(el.dataset && el.dataset.find){ e.preventDefault(); const kind = el.dataset.find; if(normPlot(T(), M.draft[kind].plot)){ if(KIND[kind].focus) focusSel(KIND[kind].focus); else el.blur(); } return; }
   if(el.id === 's-main' && M.draft.s.smode === 'est'){ e.preventDefault(); focusSel('#s-water'); return; }
-  if(el.dataset && el.dataset.d){ e.preventDefault(); (el.dataset.d[0] === 'y' ? saveY : saveS)(); }
+  if(el.dataset && el.dataset.d){ e.preventDefault(); KIND[el.dataset.d[0]].save(); }
 });
 document.addEventListener('change', e => {
   const el = e.target;
@@ -1124,7 +1252,8 @@ document.addEventListener('submit', e => {
   if(f.id === 'setform'){
     const url = fv(f,'url').value.trim(), key = fv(f,'key').value.trim();
     if(url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) return toast('Địa chỉ phải có dạng https://script.google.com/macros/s/…/exec');
-    if(url !== M.settings.url || key !== M.settings.key) M.lastSync = 0;
+    if(url !== M.settings.url || key !== M.settings.key){ M.lastSync = 0; M.api = 0; }
+    setDirty = false;
     M.settings = { url, key }; saveMeta(); render(); toast(url ? 'Đang kết nối…' : 'Đã tắt sổ chung'); sync('settings');
   }
 });
@@ -1139,7 +1268,7 @@ if('serviceWorker' in navigator && /^https:|^http:\/\/(localhost|127\.)/.test(lo
   const m = location.hash.match(/[#&]u=([^&]+)&k=([^&]*)/); if(!m) return;
   let u, k; try{ u = decodeURIComponent(m[1]); k = decodeURIComponent(m[2]); }catch(e){ return; }
   if(/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u) && (u !== M.settings.url || k !== M.settings.key)){
-    if(!M.settings.url || confirm('Link này nối sang một sổ chung khác. Đổi sổ chung?')){ M.settings = { url:u, key:k }; M.lastSync = 0; saveMeta(); }
+    if(!M.settings.url || confirm('Link này nối sang một sổ chung khác. Đổi sổ chung?')){ M.settings = { url:u, key:k }; M.lastSync = 0; M.api = 0; saveMeta(); }
   }
   try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
 })();
