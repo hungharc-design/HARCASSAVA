@@ -206,10 +206,18 @@
   nav button.on{color:var(--leaf)}
 
   .savebar{position:fixed; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom)); z-index:6;
-    display:flex; justify-content:center; pointer-events:none; padding:12px 16px;
-    background:linear-gradient(to top,var(--bg) 62%,rgba(127,127,127,0))}
+    display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; padding:12px 16px;
+    background:linear-gradient(to top,var(--bg) 82%,rgba(127,127,127,0)); padding-top:20px}
   .savebar .btn{max-width:608px; min-height:56px; font-size:18px; font-weight:800; pointer-events:auto; box-shadow:0 3px 12px rgba(23,49,31,.18)}
-  .savepad{height:90px}
+  .savebar .btn{width:100%}
+  /* dòng trạng thái tự lưu, ngay trên nút */
+  .asline{font-size:13px; font-weight:600; padding:4px 12px; border-radius:999px; background:var(--paper); border:1px solid var(--line);
+    color:var(--ink2); max-width:100%; text-align:center; box-shadow:0 1px 4px rgba(23,49,31,.10)}
+  .asline[data-k="saved"]{color:var(--leaf); border-color:var(--leaf); background:var(--leaf-soft)}
+  .asline[data-k="warn"]{color:var(--stem); border-color:var(--stem); background:var(--stem-soft)}
+  .own{background:var(--leaf-soft); border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px; font-size:14px; margin-bottom:12px}
+  .own b{color:var(--leaf)}
+  .savepad{height:122px}
 
   .modal{position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; justify-content:center}
   .modal .box{background:var(--bg); width:100%; max-width:640px; border-radius:16px 16px 0 0;
@@ -269,7 +277,7 @@
 
 <script>
 /* ================= hằng số, trạng thái ================= */
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 const SEED_API = 2;             // bản máy chủ tối thiểu nhận được số liệu cây giống
 const KEY = 'harcassava_v1';
 /* Tinh bột (%) = a × tỷ trọng + b */
@@ -421,6 +429,14 @@ function parseLayout(text){
 
 /* ================= đồng bộ ================= */
 function enqueue(op){ M.queue.push(snap(op)); saveMeta(); scheduleSync(300); renderStatus(); }
+/* Tự lưu tạo nhiều lần ghi cho cùng một ô (27 rồi 27,5). Gộp vào thao tác đang chờ của ô đó.
+   Luôn tạo đối tượng MỚI khi gộp: nếu bản cũ đang trên đường gửi thì bản gộp vẫn nằm lại hàng đợi và được gửi tiếp. */
+function enqueuePlot(op){
+  const i = M.queue.findIndex(q => q.op === 'plot' && q.trial === op.trial && q.plot === op.plot && (q.need || 0) === (op.need || 0) && !q.tries);
+  if(i >= 0){ const m = snap(M.queue[i]); m.fields = Object.assign({}, m.fields, snap(op.fields)); M.queue[i] = m; }
+  else M.queue.push(snap(op));
+  saveMeta(); scheduleSync(300); renderStatus();
+}
 function scheduleSync(ms){ clearTimeout(syncTimer); syncTimer = setTimeout(() => sync('change'), ms); }
 async function api(body){
   const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
@@ -511,7 +527,12 @@ function renderStatus(){
 /* ================= vẽ màn hình ================= */
 function isTyping(){ const a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
 function safeRender(){ if(isTyping() || $('.modal') || (tab === 'set' && setDirty)){ renderPending = true; renderHeader(); return; } renderPending = false; render(); }
-document.addEventListener('focusout', () => { setTimeout(() => { if(renderPending) safeRender(); }, 250); });
+document.addEventListener('focusout', e => {
+  // Rời một ô nhập số liệu: tự lưu ngay, không đợi đủ 2 giây.
+  const k = e.target && e.target.dataset && e.target.dataset.d ? e.target.dataset.d.split('.')[0] : '';
+  if(k) setTimeout(() => { if(M.draft[k].dirty) autoCommit(k, true); }, 150);
+  setTimeout(() => { if(renderPending) safeRender(); }, 250);
+});
 
 function progress(t){
   const ps = plotsOf(t.id), o = ord(t); let y = 0, s = 0, e = 0, g = 0, gc = 0, gb = 0;
@@ -548,10 +569,11 @@ function focusSel(sel){ const el = $(sel); if(el){ el.focus(); if(el.select) el.
 
 /* ---- nhập liệu: ba tab cùng một khung (tìm ô → thẻ ô → form → Lưu) ---- */
 const KIND = {
-  y:{ make:newY, form:(t,d,id) => formY(t,d,id), save:v => saveY(v), focus:'#y-weight', hint:'Nhập số ô để cân năng suất.' },
-  s:{ make:newS, form:(t,d,id) => formS(t,d,id), save:v => saveS(v), focus:'#s-main',   hint:'Nhập số ô để ghi hàm lượng tinh bột.' },
-  g:{ make:newG, form:(t,d,id) => formG(t,d,id), save:v => saveG(v), focus:null,        hint:'Nhập số ô để ghi thu cây giống.' }
+  y:{ make:newY, form:(t,d,id) => formY(t,d,id), build:(t,d,id) => buildY(t,d,id), save:v => saveKind('y', v), has:'weight', val:'weight',  by:'yby', focus:'#y-weight', hint:'Nhập số ô để cân năng suất.' },
+  s:{ make:newS, form:(t,d,id) => formS(t,d,id), build:(t,d,id) => buildS(t,d,id), save:v => saveKind('s', v), has:'starch', val:'starch',  by:'sby', focus:'#s-main',   hint:'Nhập số ô để ghi hàm lượng tinh bột.' },
+  g:{ make:newG, form:(t,d,id) => formG(t,d,id), build:(t,d,id) => buildG(t,d,id), save:v => saveKind('g', v), has:'seed',   val:'bundles', by:'gby', focus:null,        hint:'Nhập số ô để ghi thu cây giống.' }
 };
+const saveY = v => saveKind('y', v), saveS = v => saveKind('s', v), saveG = v => saveKind('g', v);
 function fillDraft(kind, d, t, id){
   const r = plotsOf(t.id)[id] || {};
   if(kind === 'g'){ d.seed = has(r.seed); d.bundles = has(r.bundles) ? String(r.bundles) : ''; d.touched = {}; d.dirty = false; return; }
@@ -574,8 +596,12 @@ function setPlot(kind, raw){
   const d = M.draft[kind];
   const curId = d.plot ? normPlot(t, d.plot) : null, newId = raw ? normPlot(t, raw) : null;
   if(curId && d.dirty && newId !== curId){
-    if(confirm(`Ô ${curId} chưa lưu.\n\nOK = lưu rồi chuyển ô\nHuỷ = bỏ số vừa nhập`)){
-      if(!KIND[kind].save(true)) return false;
+    // Rời ô: tự lưu nếu được. Chỉ hỏi khi số chưa đủ, bất thường, hoặc sẽ ghi đè số của người khác.
+    if(!autoCommit(kind, true) && M.draft[kind].dirty){
+      const why = autoState(kind, true).msg;
+      if(confirm(`Ô ${curId} chưa lưu${why ? ' (' + why.replace(/ — bấm Lưu.*$/, '') + ')' : ''}.\n\nOK = lưu rồi chuyển ô\nHuỷ = bỏ số vừa nhập`)){
+        if(!KIND[kind].save(true)) return false;
+      }
     }
   }
   const nd = KIND[kind].make();
@@ -630,6 +656,18 @@ function recent(t, kind){
   return `<h3>Vừa nhập trên máy này</h3><div class="recent">${j.map(x =>
     `<button type="button" data-goto="${esc(x.p)}" data-kind="${kind}"><span class="p">${esc(x.p)}</span><span>${esc(x.txt)}</span><span class="w">${fmtT(x.t)}</span></button>`).join('')}</div>`;
 }
+/* Ô đã có số: của mình thì chỉ báo cho biết; của người khác thì cảnh báo, vì sửa là ghi đè. */
+function had(by, at, what, soft){
+  const when = has(at) ? ', ' + fmtDT(at) : '';
+  if(!by || by === M.user || soft) return `<div class="own"><b>Đã lưu:</b> ${what}${by ? ' — ' + (by === M.user ? 'bạn' : esc(by)) : ''}${when}.</div>`;
+  return `<div class="banner"><b>Ô này đã có số của ${esc(by)}:</b> ${what}${when}. Sửa thì phải bấm Lưu để ghi đè.</div>`;
+}
+function saveBar(kind){
+  const st = autoState(kind);
+  return `<div class="savepad"></div>
+    <div class="savebar"><div class="asline" id="as-${kind}" data-k="${st.k}" ${st.msg ? '' : 'hidden'}>${esc(st.msg || '')}</div>
+      <button class="btn primary" data-act="save-${kind}" type="button">${esc(saveLabel(kind))}</button></div>`;
+}
 const sampleField = kind => `
   <label class="f"><span>Mẫu cân bột đã lấy trước khi cân ô (kg)</span>
     <input data-d="${kind}.sample" inputmode="decimal" class="num" placeholder="để trống nếu không có" value="${esc(M.draft[kind].sample)}" autocomplete="off">
@@ -639,7 +677,7 @@ const sampleField = kind => `
 function formY(t, d, id){
   const r = plotsOf(t.id)[id] || {};
   return `${stake(t, id)}
-    ${has(r.weight) ? `<div class="banner"><b>Ô này đã cân:</b> ${nf(totalW(r),2)} kg, ${esc(has(r.plants) ? r.plants : t.nharvest)} cây${r.yby ? ' — ' + esc(r.yby) : ''}${has(r.yat) ? ', ' + fmtDT(r.yat) : ''}. Lưu sẽ ghi đè.</div>` : ''}
+    ${has(r.weight) ? had(r.yby, r.yat, `${nf(totalW(r),2)} kg, ${esc(has(r.plants) ? r.plants : t.nharvest)} cây`) : ''}
     <div class="f"><span>Số cây thực thu <i class="hintin">thí nghiệm thu ${esc(t.nharvest)} cây mỗi ô</i></span>
       <div class="stepper">
         <button type="button" data-plants="-1" aria-label="Bớt một cây">−</button>
@@ -653,8 +691,7 @@ function formY(t, d, id){
     ${sampleField('y')}
     <label class="f"><span>Ghi chú</span><input data-d="y.note" placeholder="không bắt buộc" value="${esc(d.note)}" autocomplete="off"></label>
     ${has(r.weight) ? `<button class="linkbtn" type="button" data-act="clear-y">Xoá số liệu năng suất của ô ${esc(id)}</button>` : ''}
-    <div class="savepad"></div>
-    <div class="savebar"><button class="btn primary" data-act="save-y" type="button">Lưu ô ${esc(id)}</button></div>`;
+    ${saveBar('y')}`;
 }
 function calcY(t, d){
   const w = num(d.weight); if(w === null) return null;
@@ -669,23 +706,21 @@ function resY(t, d){
   return `<div class="l main"><span>Tổng khối lượng ô${c.s ? ` (${nf(c.w,2)} + ${nf(c.s,2)})` : ''}</span><b>${nf(c.tot,2)} kg</b></div>
     ${c.p !== t.nharvest ? `<div class="l"><span>Quy đổi về ${esc(t.nharvest)} cây (thực thu ${nf(c.p,0)})</span><b>${c.adj === null ? '—' : nf(c.adj,2) + ' kg'}</b></div>` : ''}`;
 }
-function saveY(viaSwitch){
-  const t = T(), d = M.draft.y, id = t && normPlot(t, d.plot); if(!id) return false;
+/* Dựng thao tác ghi từ số đang gõ. Trả về { error } nếu chưa lưu được, hoặc { fields, txt, odd, mid }. */
+function buildY(t, d, id){
   const w = num(d.weight);
-  if(w === null || w < 0){ toast('Nhập khối lượng củ'); focusSel('#y-weight'); return false; }
+  if(w === null || w < 0) return { error:'Nhập khối lượng củ', focus:'#y-weight' };
   const p = d.plants === '' ? t.nharvest : num(d.plants);
-  if(p === null || p < 0 || p % 1){ toast('Số cây thực thu chưa đúng'); return false; }
+  if(p === null || p < 0 || p % 1) return { error:'Số cây thực thu chưa đúng' };
   const s = d.sample === '' ? null : num(d.sample);
-  if(d.sample !== '' && (s === null || s < 0)){ toast('Lượng mẫu cân bột chưa đúng'); return false; }
-  const tot = w + (s || 0);
-  if(p > 0 && tot / p > 15 && !confirm(`Ô ${id}: ${nf(tot,2)} kg cho ${p} cây, tức ${nf(tot/p,1)} kg mỗi cây.\nCon số này có đúng không?`)) return false;
+  if(d.sample !== '' && (s === null || s < 0)) return { error:'Lượng mẫu cân bột chưa đúng' };
+  const tot = w + (s || 0), adj = p > 0 ? tot * t.nharvest / p : null;
   const fields = { plants:p, weight:w, yby:M.user, yat:Date.now() };
   if(d.touched.sample) fields.sample = s === null ? '' : s;
   if(d.touched.note) fields.note = d.note.trim();
-  const adj = p > 0 ? tot * t.nharvest / p : null;
-  commitPlot(t, id, fields, 'y', `${nf(tot,2)} kg · ${p} cây` + (p !== t.nharvest && adj !== null ? ` · quy đổi ${nf(adj,2)} kg` : ''));
-  if(!viaSwitch) afterSave('y', id);
-  return true;
+  return { fields, mid: endsMid(d.weight) || endsMid(d.sample),
+    odd: p > 0 && tot / p > 15 ? `Ô ${id}: ${nf(tot,2)} kg cho ${p} cây, tức ${nf(tot/p,1)} kg mỗi cây.\nCon số này có đúng không?` : '',
+    txt: `${nf(tot,2)} kg · ${p} cây` + (p !== t.nharvest && adj !== null ? ` · quy đổi ${nf(adj,2)} kg` : '') };
 }
 
 /* ---- tab Tinh bột ---- */
@@ -693,7 +728,7 @@ function formS(t, d, id){
   const r = plotsOf(t.id)[id] || {};
   const fid = d.formula || 'reimann';
   return `${stake(t, id)}
-    ${has(r.starch) ? `<div class="banner"><b>Ô này đã có tinh bột:</b> ${nf(r.starch,1)} %${r.smode === 'est' ? ' (ước tính)' : ''}${r.sby ? ' — ' + esc(r.sby) : ''}${has(r.sat) ? ', ' + fmtDT(r.sat) : ''}. Lưu sẽ ghi đè.</div>` : ''}
+    ${has(r.starch) ? had(r.sby, r.sat, `${nf(r.starch,1)} %${r.smode === 'est' ? ' (ước tính)' : ''}`) : ''}
     <div class="chips">
       <button class="chip ${d.smode !== 'est' ? 'on' : ''}" type="button" data-smode="direct">Đủ 5 kg · đo trực tiếp</button>
       <button class="chip ${d.smode === 'est' ? 'on' : ''}" type="button" data-smode="est">Thiếu mẫu · cân khô, ướt</button>
@@ -712,8 +747,7 @@ function formS(t, d, id){
     <div class="result" id="res-s">${resS(t, d)}</div>
     ${sampleField('s')}
     ${has(r.starch) ? `<button class="linkbtn" type="button" data-act="clear-s">Xoá số liệu tinh bột của ô ${esc(id)}</button>` : ''}
-    <div class="savepad"></div>
-    <div class="savebar"><button class="btn primary" data-act="save-s" type="button">Lưu tinh bột ô ${esc(id)}</button></div>`;
+    ${saveBar('s')}`;
 }
 /* Trả về { starch, est, sg, ... } hoặc { err } hoặc null khi chưa đủ số */
 function calcS(t, d){
@@ -740,22 +774,20 @@ function resS(t, d){
     <div class="l main"><span>Tinh bột ước tính</span><b>${nf(c.starch,1)} %</b></div>
     <div class="e${odd ? ' bad' : ''}">${odd ? 'Kết quả bất thường — kiểm tra lại hai số cân. ' : ''}= ${nf(c.c.a,1)} × tỷ trọng ${c.c.b < 0 ? '−' : '+'} ${nf(Math.abs(c.c.b),1)}</div>`;
 }
-function saveS(viaSwitch){
-  const t = T(), d = M.draft.s, id = t && normPlot(t, d.plot); if(!id) return false;
+function buildS(t, d, id){
   const c = calcS(t, d);
-  if(!c){ toast(d.smode === 'est' ? 'Nhập cân khô và cân ướt' : 'Nhập hàm lượng tinh bột'); focusSel('#s-main'); return false; }
-  if(c.err){ toast(c.err); return false; }
-  if((c.starch < 5 || c.starch > 40) && !confirm(`Ô ${id}: tinh bột ${nf(c.starch,1)} %.\nCon số này có đúng không?`)) return false;
+  if(!c) return { error: d.smode === 'est' ? 'Nhập cân khô và cân ướt' : 'Nhập hàm lượng tinh bột', focus:'#s-main' };
+  if(c.err) return { error:c.err };
   const s = d.sample === '' ? null : num(d.sample);
-  if(d.sample !== '' && (s === null || s < 0)){ toast('Lượng mẫu cân bột chưa đúng'); return false; }
+  if(d.sample !== '' && (s === null || s < 0)) return { error:'Lượng mẫu cân bột chưa đúng' };
   const fields = c.est
     ? { smode:'est', starch:c.starch, air:c.a, water:c.w, formula: c.fid === 'custom' ? `custom:${c.c.a}:${c.c.b}` : c.fid, sby:M.user, sat:Date.now() }
     : { smode:'direct', starch:c.starch, air:'', water:'', formula:'', sby:M.user, sat:Date.now() };
   if(d.touched.sample) fields.sample = s === null ? '' : s;
-  M.ui.smode = d.smode; if(c.est) M.ui.formula = c.fid;
-  commitPlot(t, id, fields, 's', `${nf(c.starch,1)} %` + (c.est ? ` · ước tính (tỷ trọng ${nf(c.sg,3)})` : ' · đo trực tiếp'));
-  if(!viaSwitch) afterSave('s', id);
-  return true;
+  return { fields, mid: endsMid(d.starch) || endsMid(d.air) || endsMid(d.water) || endsMid(d.sample),
+    odd: c.starch < 5 || c.starch > 40 ? `Ô ${id}: tinh bột ${nf(c.starch,1)} %.\nCon số này có đúng không?` : '',
+    after: () => { M.ui.smode = d.smode; if(c.est) M.ui.formula = c.fid; },
+    txt: `${nf(c.starch,1)} %` + (c.est ? ` · ước tính (tỷ trọng ${nf(c.sg,3)})` : ' · đo trực tiếp') };
 }
 
 /* ---- tab Cây giống ---- */
@@ -763,7 +795,7 @@ function formG(t, d, id){
   const r = plotsOf(t.id)[id] || {}, adj = adjW(t, r), st = starchOf(r);
   return `${stake(t, id)}
     ${adj !== null || st !== null ? `<div class="ctx">${adj !== null ? `<span>Khối lượng ô <b>${nf(adj,1)} kg</b></span>` : ''}${st !== null ? `<span>Tinh bột <b>${nf(st,1)} %</b>${r.smode === 'est' ? ' ước tính' : ''}</span>` : ''}</div>` : ''}
-    ${has(r.seed) ? `<div class="banner"><b>Ô này đã ghi thu giống:</b> ${has(r.bundles) ? esc(r.bundles) + ' bó' : 'đã chọn, chưa thu'}${r.gby ? ' — ' + esc(r.gby) : ''}${has(r.gat) ? ', ' + fmtDT(r.gat) : ''}.</div>` : ''}
+    ${has(r.seed) ? had(r.gby, r.gat, has(r.bundles) ? esc(r.bundles) + ' bó giống' : 'đã chọn thu giống, chưa thu', !has(r.bundles)) : ''}
     <button class="switch ${d.seed ? 'on' : ''}" type="button" role="switch" aria-checked="${d.seed ? 'true' : 'false'}" data-seed="1">
       <span class="sw"></span><span class="tx"><b>Thu cây giống ô này</b><small>${d.seed ? 'Đã chọn để trồng tiếp vụ sau' : 'Chưa chọn'}</small></span></button>
     <div class="f ${d.seed ? '' : 'dim'}" id="g-field"><span>Số bó giống đã thu</span>
@@ -773,23 +805,91 @@ function formG(t, d, id){
         <button type="button" data-bundles="1" aria-label="Thêm một bó">+</button>
       </div>
       <small>Chọn trước, thu sau cũng được: để trống số bó, khi bó xong thì mở lại ô và điền.</small></div>
-    <div class="savepad"></div>
-    <div class="savebar"><button class="btn primary" data-act="save-g" type="button">Lưu cây giống ô ${esc(id)}</button></div>`;
+    ${saveBar('g')}`;
 }
-function saveG(viaSwitch){
-  const t = T(), d = M.draft.g, id = t && normPlot(t, d.plot); if(!id) return false;
+function buildG(t, d, id){
   const r = plotsOf(t.id)[id] || {};
   const n = d.bundles === '' ? null : num(d.bundles);
-  if(d.bundles !== '' && (n === null || n < 0 || n % 1)){ toast('Số bó giống chưa đúng'); focusSel('#g-bundles'); return false; }
+  if(d.bundles !== '' && (n === null || n < 0 || n % 1)) return { error:'Số bó giống chưa đúng', focus:'#g-bundles' };
   const sel = d.seed || (n !== null && n > 0);
-  if(!sel && !has(r.seed)){                      // không có gì để ghi
-    if(!viaSwitch) toast('Bật “Thu cây giống ô này” hoặc nhập số bó trước khi lưu');
-    return !!viaSwitch;
+  if(!sel && !has(r.seed)) return { none:'Bật “Thu cây giống ô này” hoặc nhập số bó trước khi lưu' };   // không có gì để ghi
+  return { need:SEED_API, erase: !sel,
+    fields: sel ? { seed:1, bundles: n === null ? '' : n, gby:M.user, gat:Date.now() } : { seed:'', bundles:'', gby:'', gat:'' },
+    odd: n !== null && n > 30 ? `Ô ${id}: ${n} bó giống.\nCon số này có đúng không?` : '',
+    txt: sel ? (n ? `${n} bó giống` : 'đã chọn, chưa thu') : 'bỏ chọn thu giống' };
+}
+
+/* ================= tự lưu =================
+   Gõ xong (ngừng 2 giây, rời ô nhập, chuyển ô, chuyển tab, tắt màn hình) là số tự được ghi vào ô và gửi lên sổ chung.
+   Ba trường hợp app KHÔNG tự lưu mà chờ bấm nút: số chưa đủ hoặc sai; số bất thường; sửa đè lên số người khác đã ghi. */
+const AUTO_MS = 2000, autoT = {};
+const endsMid = v => /[.,]$/.test(String(v ?? '').trim());            // "27," là đang gõ dở
+const fmtTS = ms => { const d = new Date(ms); return `${fmtT(d)}:${pad2(d.getSeconds())}`; };
+/* Tên người đã ghi số mà lần lưu này sẽ thay bằng số khác; rỗng nếu không đè lên ai. */
+function foreign(t, id, kind, f){
+  const r = plotsOf(t.id)[id] || {}, K = KIND[kind];
+  return has(r[K.val]) && r[K.by] && r[K.by] !== M.user && Number(r[K.val]) !== Number(f[K.val]) ? String(r[K.by]) : '';
+}
+/* Trạng thái của số đang gõ: { k, msg, ok, b }. ok = được phép tự lưu ngay. leaving = đang rời ô (số gõ dở "27," cũng nhận). */
+function autoState(kind, leaving){
+  const t = T(), d = M.draft[kind], id = t && d.plot ? normPlot(t, d.plot) : null;
+  if(!id) return { k:'' };
+  if(!d.dirty) return d.savedAt ? { k:'saved', msg:`✓ Đã tự lưu lúc ${fmtTS(d.savedAt)}` } : { k:'' };
+  const b = KIND[kind].build(t, d, id);
+  if(b.none) return { k:'' };
+  if(b.error) return { k:'wait', msg:'Chưa lưu: ' + b.error.charAt(0).toLowerCase() + b.error.slice(1) };
+  if(b.odd) return { k:'warn', msg:'Số bất thường — bấm Lưu để xác nhận' };
+  if(b.erase) return { k:'warn', msg:'Bỏ chọn thu giống — bấm Lưu để xác nhận' };
+  const who = foreign(t, id, kind, b.fields);
+  if(who) return { k:'warn', msg:`Sửa số của ${who} — bấm Lưu để ghi đè` };
+  if(b.mid && !leaving) return { k:'wait', msg:'Đang gõ…' };
+  return { k:'wait', msg:'Tự lưu khi bạn ngừng gõ…', ok:true, b, id };
+}
+function saveLabel(kind){
+  const t = T(), d = M.draft[kind], id = t && normPlot(t, d.plot), r = id ? (plotsOf(t.id)[id] || {}) : {};
+  return (!d.dirty && has(r[KIND[kind].has]) ? 'Xong ô ' : 'Lưu ô ') + (id || '');
+}
+function paintAuto(kind){
+  const el = $('#as-' + kind); if(!el) return;
+  const st = autoState(kind);
+  el.textContent = st.msg || ''; el.dataset.k = st.k; el.hidden = !st.msg;
+  const b = $(`[data-act="save-${kind}"]`); if(b) b.textContent = saveLabel(kind);
+}
+/* Tự lưu số đang gõ nếu được phép. Không vẽ lại form, nên con trỏ và bàn phím giữ nguyên. */
+function autoCommit(kind, leaving){
+  clearTimeout(autoT[kind]);
+  const st = autoState(kind, leaving);
+  if(!st.ok){ paintAuto(kind); return false; }
+  const t = T(), d = M.draft[kind];
+  if(st.b.after) st.b.after();
+  commitPlot(t, st.id, st.b.fields, kind, st.b.txt, st.b.need);
+  d.dirty = false; d.touched = {}; d.savedAt = Date.now(); saveMeta();
+  paintAuto(kind); renderHeader();
+  return true;
+}
+function armAuto(kind, ms){
+  clearTimeout(autoT[kind]);
+  autoT[kind] = setTimeout(() => autoCommit(kind), ms || AUTO_MS);
+  paintAuto(kind);
+}
+const flushAuto = () => Object.keys(KIND).forEach(k => { if(M.draft[k].dirty) autoCommit(k, true); });
+
+/* Nút dưới đáy: kiểm tra, hỏi lại nếu số bất thường, ghi (nếu chưa tự lưu) rồi sang màn hình "Ô kế tiếp". */
+function saveKind(kind, viaSwitch){
+  const t = T(), d = M.draft[kind], id = t && normPlot(t, d.plot); if(!id) return false;
+  clearTimeout(autoT[kind]);
+  const r = plotsOf(t.id)[id] || {};
+  if(!d.dirty && has(r[KIND[kind].has])){                 // đã tự lưu rồi, hoặc chỉ mở xem: không ghi lại lần nữa
+    if(!viaSwitch){ if(!M.ui.last[kind] || M.ui.last[kind].p !== id) M.ui.last[kind] = { tr:t.id, p:id, txt:'không thay đổi' }; afterSave(kind, id); }
+    return true;
   }
-  if(n !== null && n > 30 && !confirm(`Ô ${id}: ${n} bó giống.\nCon số này có đúng không?`)) return false;
-  const fields = sel ? { seed:1, bundles: n === null ? '' : n, gby:M.user, gat:Date.now() } : { seed:'', bundles:'', gby:'', gat:'' };
-  commitPlot(t, id, fields, 'g', sel ? (n ? `${n} bó giống` : 'đã chọn, chưa thu') : 'bỏ chọn thu giống', SEED_API);
-  if(!viaSwitch) afterSave('g', id);
+  const b = KIND[kind].build(t, d, id);
+  if(b.none){ if(!viaSwitch) toast(b.none); return !!viaSwitch; }
+  if(b.error){ toast(b.error); if(b.focus) focusSel(b.focus); return false; }
+  if(b.odd && !confirm(b.odd)) return false;
+  if(b.after) b.after();
+  commitPlot(t, id, b.fields, kind, b.txt, b.need);
+  if(!viaSwitch) afterSave(kind, id);
   return true;
 }
 
@@ -797,9 +897,11 @@ function commitPlot(t, id, fields, kind, txt, need){
   const ps = plotsOf(t.id);
   ps[id] = applyFields(ps[id], fields);
   savePlots(t.id);
-  M.journal.unshift({ t:Date.now(), tr:t.id, p:id, k:kind, txt }); if(M.journal.length > 300) M.journal.length = 300;
+  const j = { t:Date.now(), tr:t.id, p:id, k:kind, txt }, j0 = M.journal[0];
+  if(j0 && j0.tr === j.tr && j0.p === j.p && j0.k === j.k) M.journal[0] = j;            // cùng một ô: sửa dòng nhật ký, không thêm dòng
+  else { M.journal.unshift(j); if(M.journal.length > 300) M.journal.length = 300; }
   M.ui.last[kind] = { tr:t.id, p:id, txt };
-  enqueue(need ? { op:'plot', trial:t.id, plot:id, fields, need } : { op:'plot', trial:t.id, plot:id, fields });
+  enqueuePlot(need ? { op:'plot', trial:t.id, plot:id, fields, need } : { op:'plot', trial:t.id, plot:id, fields });
 }
 function afterSave(kind, id){
   M.draft[kind] = KIND[kind].make(); saveMeta();
@@ -947,7 +1049,7 @@ function viewSettings(){
       </div>
     </form>
     ${connected ? `<div class="btnrow"><button class="btn sm" type="button" data-act="invite">Sao chép link mời cho người trong nhóm</button></div>
-      <p class="muted small" style="margin-top:8px">Người nhận mở link là máy tự nối sổ chung, không phải gõ địa chỉ và mã nhóm. Mỗi lần bấm Lưu ô, số liệu được gửi ngay lên Google Sheet; số của máy khác về sau khoảng 20 giây. Mất mạng vẫn nhập bình thường.</p>`
+      <p class="muted small" style="margin-top:8px">Người nhận mở link là máy tự nối sổ chung, không phải gõ địa chỉ và mã nhóm. Số liệu tự lưu khi bạn ngừng gõ 2 giây hoặc rời ô nhập, rồi tự gửi lên Google Sheet; số của máy khác về sau khoảng 20 giây. Mất mạng vẫn nhập bình thường.</p>`
     : `<p class="muted small" style="margin-top:8px">Chưa nối sổ chung: số liệu chỉ nằm trên máy này và người khác không thấy thí nghiệm bạn tạo. Xem file hướng dẫn để tạo Google Sheet dùng chung.</p>`}
     ${heldOps() ? `<div class="banner" style="margin-top:12px"><b>Sổ chung đang chạy Code.gs bản cũ.</b> ${heldOps()} số liệu cây giống đang giữ trên máy này và sẽ tự gửi sau khi bạn dán Code.gs mới rồi triển khai phiên bản mới (xem file hướng dẫn, mục Nâng cấp). Năng suất và tinh bột vẫn gửi bình thường.</div>` : ''}
     ${M.failed.length ? `<div class="banner" style="margin-top:12px"><b>${M.failed.length} thao tác gửi lỗi</b> (${esc(M.failed[0].err || '')}). Số liệu vẫn còn trên máy này.
@@ -1114,6 +1216,7 @@ function submitTrial(f){
 }
 function pickTrial(id){
   if(M.cur !== id){
+    flushAuto();
     const d = M.draft; if((d.y.dirty || d.s.dirty || d.g.dirty) && !confirm('Còn số chưa lưu ở thí nghiệm đang mở. Vẫn đổi thí nghiệm?')) return;
     M.cur = id; M.draft = freshDrafts(); rankLimit = 100; saveMeta();
   }
@@ -1123,6 +1226,7 @@ function pickTrial(id){
 /* ================= sự kiện ================= */
 $('#nav').addEventListener('click', e => {
   const b = e.target.closest('button[data-tab]'); if(!b) return;
+  if(KIND[tab] && M.draft[tab].dirty) autoCommit(tab, true);                 // chuyển tab: tự lưu số đang gõ ở tab cũ
   tab = b.dataset.tab; setDirty = false; render(); window.scrollTo(0, 0);
 });
 $('#userchip').addEventListener('click', () => openUserModal(false));
@@ -1137,12 +1241,16 @@ document.addEventListener('click', e => {
   if(ds.plants){
     const t = T(), d = M.draft.y, cur = d.plants === '' ? t.nharvest : (num(d.plants) ?? t.nharvest);
     d.plants = String(Math.max(0, cur + (+ds.plants))); d.touched.plants = true; d.dirty = true; saveMeta();
-    const i = $('[data-d="y.plants"]'); if(i) i.value = d.plants; updateRes('y'); return;
+    const i = $('[data-d="y.plants"]'); if(i) i.value = d.plants; updateRes('y'); armAuto('y', 1200); return;
   }
-  if(ds.seed){ const d = M.draft.g; d.seed = !d.seed; if(!d.seed) d.bundles = ''; d.dirty = true; saveMeta(); renderBody('g'); return; }
-  if(ds.bundles){ const d = M.draft.g; d.bundles = String(Math.max(0, (num(d.bundles) || 0) + (+ds.bundles))); if(+d.bundles > 0) d.seed = true; d.touched.bundles = true; d.dirty = true; saveMeta(); renderBody('g'); return; }
-  if(ds.smode){ const d = M.draft.s; d.smode = ds.smode; d.pinned = true; saveMeta(); renderBody('s'); focusSel('#s-main'); return; }
-  if(ds.formula){ const d = M.draft.s; d.formula = ds.formula; d.pinned = true; saveMeta(); renderBody('s'); return; }
+  if(ds.seed){ const d = M.draft.g; d.seed = !d.seed; if(!d.seed) d.bundles = ''; d.dirty = true; saveMeta(); renderBody('g'); armAuto('g', 1200); return; }
+  if(ds.bundles){ const d = M.draft.g; d.bundles = String(Math.max(0, (num(d.bundles) || 0) + (+ds.bundles))); if(+d.bundles > 0) d.seed = true; d.touched.bundles = true; d.dirty = true; saveMeta(); renderBody('g'); armAuto('g', 1200); return; }
+  if(ds.smode || ds.formula){                      // đổi cách đo hoặc công thức làm đổi kết quả: nếu đã có số thì coi như vừa sửa
+    const d = M.draft.s; if(ds.smode) d.smode = ds.smode; else d.formula = ds.formula;
+    d.pinned = true; const c = calcS(T(), d); if(c && !c.err) d.dirty = true;
+    saveMeta(); renderBody('s'); if(ds.smode) focusSel('#s-main'); if(d.dirty) armAuto('s');
+    return;
+  }
   if(ds.rank){ M.ui.rank = ds.rank; rankLimit = 100; saveMeta(); render(); return; }
   if(ds.by){ M.ui.by = ds.by; rankLimit = 100; saveMeta(); render(); return; }
   if(ds.pick){ pickTrial(ds.pick); return; }
@@ -1211,7 +1319,7 @@ document.addEventListener('input', e => {
     d[f] = el.value; d.touched[f] = true; d.dirty = true;
     if(kind === 'g'){ if(!d.seed && (num(d.bundles) || 0) > 0){ d.seed = true; paintSwitch(); } }
     else updateRes(kind);
-    saveMetaSoon(); return;
+    saveMetaSoon(); armAuto(kind); return;
   }
   if(el.form && el.form.id === 'setform') setDirty = true;
 });
@@ -1273,8 +1381,8 @@ if('serviceWorker' in navigator && /^https:|^http:\/\/(localhost|127\.)/.test(lo
   try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
 })();
 window.addEventListener('online', () => sync('online'));
-document.addEventListener('visibilitychange', () => { if(!document.hidden) sync('visible'); });
-window.addEventListener('pagehide', () => { if(metaTimer) saveMeta(); });   // chỉ ghi nốt phần đang gõ dở
+document.addEventListener('visibilitychange', () => { if(document.hidden) flushAuto(); else sync('visible'); });   // tắt màn hình, chuyển app: tự lưu
+window.addEventListener('pagehide', () => { flushAuto(); if(metaTimer) saveMeta(); });
 setInterval(() => { if(!document.hidden) sync('timer'); }, 20000);
 render();
 if(M.user && !T()) openTrialsModal();
